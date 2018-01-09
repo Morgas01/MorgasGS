@@ -1,0 +1,21 @@
+{
+	"name": "morgas.gs",
+	"version": "0.8.3",
+	"description": "Morgas Game System",
+	"homepage": "https://github.com/Morgas01/MorgasGS",
+	"bugs": {
+		"url": "https://github.com/Morgas01/MorgasGS/issues"
+	},
+	"license": "MIT",
+	"main": "index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Morgas01/MorgasGS.git"
+	},
+	"scripts": {
+		"build": "node lib/build"
+	},
+	"devDependencies": {
+		"morgas": "^0.8.2"
+	}
+}
