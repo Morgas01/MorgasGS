@@ -5,7 +5,7 @@
 	SC=SC({
 		Button:"gs.Button",
 		Axis:"gs.Axis",
-		Stick:"gs.Sick"
+		Stick:"gs.Stick"
 	});
 
 	Controller.Keyboard=µ.Class(Controller,{
@@ -18,8 +18,11 @@
 		 /**
 		  * @param {Object} param
 		  * @param {Controller.Keyboard~mappings} param.mappings
+		  * @param {Boolean} (generateButtons) defaults to true if no Button is defined
+		  * @param {Boolean} (generateAxes) defaults to true if no Axis is defined
+		  * @param {Boolean} (generateSticks) defaults to true if no Stick is defined
 		  */
-		constructor:function(param)
+		constructor:function(param={})
 		{
 			this.mega(param);
 
@@ -27,6 +30,17 @@
 
 
 			if(param.mappings) this.associate(param.mappings);
+
+			let {
+				generateButtons=this.buttons.length==0,
+				generateAxes=this.axes.length==0,
+				generateSticks=this.sticks.length==0
+			}=param;
+
+			if(generateButtons) this.generateButtons();
+			if(generateAxes) this.generateAxes();
+			if(generateSticks) this.generateSticks();
+
 		},
 		associate({buttons={},axes={},sticks={}})
 		{
@@ -43,7 +57,7 @@
 
 			for(let key in sticks)
 			{
-				let settings=axes[key];
+				let settings=sticks[key];
 				this.associateStick(key,settings.index,settings.axis,settings.negative);
 			}
 		},
@@ -66,7 +80,8 @@
 			}
 			this.mapping.set(key,{
 				type:"axis",
-				index:index
+				index:index,
+				negative:negative
 			});
 		},
 		/**
@@ -75,7 +90,7 @@
 		 * @param {String} axis - "x" or "y"
 		 * @param {boolean} (negative)
 		 */
-		associateButton(key,index,axis,negative)
+		associateStick(key,index,axis,negative)
 		{
 			if(index in this.sticks)
 			{
@@ -84,15 +99,46 @@
 			this.mapping.set(key,{
 				type:"stick",
 				axis:axis,
-				index:index
+				index:index,
+				negative:negative
 			});
 		},
+		generateButtons()
+		{
+			for(let value of this.mapping.values())
+			{
+				if(value.type=="button"&&this.buttons[value.index]==null)
+				{
+					this.buttons[value.index]=new SC.Button();
+				}
+			}
+		},
+        generateAxes()
+        {
+        	for(let value of this.mapping.values())
+        	{
+        		if(value.type=="axis"&&this.axes[value.index]==null)
+        		{
+        			this.axes[value.index]=new SC.Axis();
+        		}
+        	}
+        },
+        generateSticks()
+        {
+        	for(let value of this.mapping.values())
+        	{
+        		if(value.type=="stick"&&this.sticks[value.index]==null)
+        		{
+        			this.sticks[value.index]=new SC.Stick();
+        		}
+        	}
+        },
 		parseEvent:function(event)
 		{
-			let mapping=this.mapping.get(event.key);
+			let mapping=this.mapping.get(event.code);
 			if(mapping)
 			{
-				let value=event.name=="keydown"?1:0;
+				let value=(event.type=="keydown"?100:0);
 				switch (mapping.type)
 				{
 					case "button":
