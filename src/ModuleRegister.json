@@ -1,0 +1,7 @@
+{
+	"gs.Axis": "Axis.js",
+	"gs.Button": "Button.js",
+	"gs.Controller": "Controller.js",
+	"gs.Controller.Keyboard": "Controller.Keyboard.js",
+	"gs.Stick": "Stick.js"
+}

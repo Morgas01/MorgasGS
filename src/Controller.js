@@ -11,7 +11,7 @@
 
 		Button:"gs.Button",
 		Axis:"gs.Axis",
-		Stick:"gs.Sick"
+		Stick:"gs.Stick"
 	});
 
 	gs.Controller=µ.Class({

@@ -1,0 +1,39 @@
+{
+	"Axis.js": {
+		"deps": [],
+		"uses": []
+	},
+	"Button.js": {
+		"deps": [],
+		"uses": []
+	},
+	"Controller.js": {
+		"deps": [
+			"Event"
+		],
+		"uses": [
+			"array.remove",
+			"array.removeIf",
+			"EventReporterPatch",
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick"
+		]
+	},
+	"Controller.Keyboard.js": {
+		"deps": [
+			"gs.Controller"
+		],
+		"uses": [
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick"
+		]
+	},
+	"Stick.js": {
+		"deps": [],
+		"uses": [
+			"gs.Axis"
+		]
+	}
+}
