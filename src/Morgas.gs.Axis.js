@@ -25,15 +25,31 @@
 		},
         setValue(value=0)
         {
-        	this.value=Math.min(Math.max((value*this.scale+this.correction,-1),1);
+        	if(value==null) return false;
+        	value=Math.min(Math.max((value*this.scale+this.correction,-1),1);
+        	if(this.value==value) return false;
+			this.value=value;
+			return true;
         },
 		getState()
 		{
 			return {
 				value:this.value
 			};
+		},
+		toJSON()
+		{
+			return {
+				correction:this.correction,
+				scale:this.scale
+			};
 		}
 	});
+
+	gs.Axis.fromJSON=function(json)
+	{
+		return new gs.Axis(json);
+	};
 
 	SMOD("gs.Axis",gs.Axis);
 

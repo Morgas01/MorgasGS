@@ -19,7 +19,11 @@
 		},
         setValue(value=0)
         {
-        	this.value=Math.min(Math.max(value,0),1);
+        	if(value==null) return false;
+        	value=Math.min(Math.max(value,0),1);
+        	if(this.value==value) return false;
+        	this.value=value;
+        	return true;
         },
 		isPressed()
 		{
@@ -31,8 +35,19 @@
 				value:this.value,
 				pressed:this.isPressed()
 			}
+		},
+		toJSON()
+		{
+			return {
+				threshold:this.threshold
+			};
 		}
 	});
+
+	gs.Button.fromJSON=function(json)
+	{
+		return new gs.Button(json);
+	};
 
 	SMOD("gs.Button",gs.Button);
 
