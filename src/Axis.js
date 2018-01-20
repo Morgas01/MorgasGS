@@ -17,16 +17,16 @@
 		},
 		setCorrection(correction=0)
 		{
-			this.correction=Math.min(Math.max(correction,-1),1);
+			this.correction=Math.min(Math.max(correction,-100),100);
 		},
-		setScale(scale=0)
+		setScale(scale=1)
 		{
-			this.scale=Math.max(correction,Number.EPSILON);
+			this.scale=Math.max(scale,Number.EPSILON);
 		},
-        setValue(value=0)
+        setValue(value)
         {
         	if(value==null) return false;
-        	value=Math.min(Math.max(value*this.scale+this.correction,-1),1);
+        	value=Math.min(Math.max(value*this.scale+this.correction,-100),100);
         	if(this.value==value) return false;
 			this.value=value;
 			return true;

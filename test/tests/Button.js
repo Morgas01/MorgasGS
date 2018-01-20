@@ -8,33 +8,33 @@ module("Button",[
 	{
 		let button=new µ.gs.Button();
 
-		button.setValue(.8);
-		addResult(container,button.value===.8,"set");
+		button.setValue(80);
+		addResult(container,button.value===80,"set");
 
 		button.setValue(-1);
 		addResult(container,button.value===0,"min");
 
-		button.setValue(2);
-		addResult(container,button.value===1,"max");
+		button.setValue(150);
+		addResult(container,button.value===100,"max");
 
 		addResult(container,!button.setValue(null),"not null");
 
-		addResult(container,!button.setValue(2),"not same");
+		addResult(container,!button.setValue(100),"not same");
 	},
 	function isPressed(container)
 	{
 		let button=new µ.gs.Button();
 		addResult(container,!button.isPressed(),"not");
 
-		button.setValue(.7);
+		button.setValue(70);
 		addResult(container,button.isPressed(),"is");
 	},
 	function threshold(container)
 	{
-		let button=new µ.gs.Button({value:.5,threshold:.8});
+		let button=new µ.gs.Button({value:50,threshold:80});
 		addResult(container,!button.isPressed(),"not");
 
-		button.setThreshold(.3);
+		button.setThreshold(30);
 		addResult(container,button.isPressed(),"is");
 	}
 ]);

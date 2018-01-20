@@ -5,22 +5,22 @@
 	//SC=SC({});
 
 	gs.Button=µ.Class({
-		constructor:function({value=0,threshold=0.5}={})
+		constructor:function({value=0,threshold=50}={})
 		{
 			this.value=0;
-			this.threshold=0.5;
+			this.threshold=50;
 
 			this.setValue(value);
 			this.setThreshold(threshold);
 		},
-		setThreshold(threshold=0.5)
+		setThreshold(threshold=50)
 		{
-			this.threshold=Math.min(Math.max(threshold,0),1);
+			this.threshold=Math.min(Math.max(threshold,0),100);
 		},
         setValue(value=0)
         {
         	if(value==null) return false;
-        	value=Math.min(Math.max(value,0),1);
+        	value=Math.min(Math.max(value,0),100);
         	if(this.value==value) return false;
         	this.value=value;
         	return true;
