@@ -1,11 +1,11 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs=µ.gs||{};
+	let gs=µ.gs=µ.gs||{};
 
-    let Event=GMOD("Event");
+	let Event=GMOD("Event");
 
 	SC=SC({
-		remove:"array.remove"
+		remove:"array.remove",
 		removeIf:"array.removeIf",
 		Reporter:"EventReporterPatch",
 
@@ -25,13 +25,13 @@
 			this.addAxes(axes);
 			this.addSticks(sticks);
 
-			new Reporter(this)
-			.introduce(ChangeEvent);
+			new SC.Reporter(this)
+			.introduce(gs.Controller.ChangeEvent);
 
 		},
 		addButtons(buttons)
 		{
-			this.buttons.push(buttons...);
+			this.buttons.push(...buttons);
 		},
 		removeButtons(buttons)
 		{
@@ -43,7 +43,7 @@
 		},
 		addAxes(axes)
 		{
-			this.axes.push(axes...);
+			this.axes.push(...axes);
 		},
 		removeAxes(axes)
 		{
@@ -55,7 +55,7 @@
 		},
 		addSticks(sticks)
 		{
-			this.sticks.push(sticks...);
+			this.sticks.push(...sticks);
 		},
 		removeSticks(sticks)
 		{
@@ -75,41 +75,41 @@
 		},
 		setButton:function(index,value)
 		{
-			if(index<0||index>this.buttons.length)
+			if(index<0||index>=this.buttons.length)
 			{
 				µ.logger.error(`#gs.Controller:001 index out of bounds (Button ${index})`);
 				return;
 			}
 			let button=this.buttons[index];
-			if(button.setValue(value));
+			if(button.setValue(value))
 			{
-				this.reportEvent(new ChangeEvent("button",index,button.getState()));
+				this.reportEvent(new gs.Controller.ChangeEvent("button",index,button.getState()));
 			}
 		},
 		setAxis:function(index,value)
 		{
-			if(index<0||index>this.axes.length)
+			if(index<0||index>=this.axes.length)
 			{
 				µ.logger.error(`#gs.Controller:002 index out of bounds (Axis ${index})`);
 				return;
 			}
 			let axis=this.axes[index];
-			if(axis.setValue(value));
+			if(axis.setValue(value))
 			{
-				this.reportEvent(new ChangeEvent("axis",index,axis.getState()));
+				this.reportEvent(new gs.Controller.ChangeEvent("axis",index,axis.getState()));
 			}
 		},
 		setStick:function(index,valueX,valueY)
 		{
-			if(index<0||index>this.sticks.length)
+			if(index<0||index>=this.sticks.length)
 			{
 				µ.logger.error(`#gs.Controller:003 index out of bounds (stick ${index})`);
 				return;
 			}
 			let stick=this.sticks[index];
-			if(stick.setValue(valueX,valueY));
+			if(stick.setValue(valueX,valueY))
 			{
-				this.reportEvent(new ChangeEvent("stick",index,stick.getState()));
+				this.reportEvent(new gs.Controller.ChangeEvent("stick",index,stick.getState()));
 			}
 		},
 		toJSON()
@@ -133,7 +133,7 @@
 
 	SMOD("gs.Controller",gs.Controller);
 
-	let ChangeEvent=ChangeEvent=µ.Class(Event,
+	gs.Controller.ChangeEvent=µ.Class(Event,
 	{
 		name:"controllerChange",
 		constructor:function(type,index,value)

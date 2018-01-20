@@ -1,6 +1,6 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-	Controller=GMOD("gs.Controller");
+	let Controller=GMOD("gs.Controller");
 
 	SC=SC({
 		Button:"gs.Button",

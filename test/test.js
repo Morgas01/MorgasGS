@@ -62,6 +62,12 @@
 	tests.loadTest("Button");
 	tests.loadTest("Axis");
 	tests.loadTest("Stick");
+
+	tests.loadMorgas("Morgas.Patch");
+	tests.loadMorgas("Morgas.Event");
+	tests.loadMorgas("Morgas.util.array.remove");
+	tests.loadMorgas("Morgas.util.function.rescope");
+
 	tests.loadTest("Controller");
 	tests.loadTest("Controller.Keyboard");
 
