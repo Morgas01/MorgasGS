@@ -14,11 +14,13 @@
 		},
 		setValue(valueX,valueY)
 		{
-			return this.xAxis.setValue(valueX)||this.yAxis.setValue(valueY);
+			let rtn=this.xAxis.setValue(valueX);
+			rtn|=this.yAxis.setValue(valueY);
+			return rtn;
 		},
 		getState()
 		{
-			let state={
+			return {
 				x:this.xAxis.value,
 				y:this.yAxis.value
 			};
