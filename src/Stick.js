@@ -1,6 +1,6 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs||{};
+    let gs=µ.gs=µ.gs||{};
 
 	SC=SC({
 		Axis:"gs.Axis"
@@ -12,7 +12,7 @@
 			this.xAxis=xAxis;
 			this.yAxis=yAxis;
 		},
-		setValue:(valueX,valueY)
+		setValue(valueX,valueY)
 		{
 			return this.xAxis.setValue(valueX)||this.yAxis.setValue(valueY);
 		},

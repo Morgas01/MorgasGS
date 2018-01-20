@@ -1,11 +1,11 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs||{};
+    let gs=µ.gs=µ.gs||{};
 
 	//SC=SC({});
 
 	gs.Button=µ.Class({
-		constructor:function({value=0,threshold:0.5}={})
+		constructor:function({value=0,threshold=0.5}={})
 		{
 			this.value=0;
 			this.threshold=0.5;

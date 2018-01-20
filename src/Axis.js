@@ -1,6 +1,6 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs||{};
+    let gs=µ.gs=µ.gs||{};
 
 	//SC=SC({});
 
@@ -26,7 +26,7 @@
         setValue(value=0)
         {
         	if(value==null) return false;
-        	value=Math.min(Math.max((value*this.scale+this.correction,-1),1);
+        	value=Math.min(Math.max(value*this.scale+this.correction,-1),1);
         	if(this.value==value) return false;
 			this.value=value;
 			return true;

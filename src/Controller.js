@@ -1,6 +1,6 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs||{};
+    let gs=µ.gs=µ.gs||{};
 
     let Event=GMOD("Event");
 
