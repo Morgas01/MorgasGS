@@ -133,6 +133,10 @@
         		}
         	}
         },
+        /**
+         * @param {Event} event
+         * @returns {Boolean} event consumed
+         */
 		parseEvent:function(event)
 		{
 			let mapping=this.mapping.get(event.code);
@@ -142,11 +146,11 @@
 				switch (mapping.type)
 				{
 					case "button":
-						this.setButton(mapping.index,value);
+						return this.setButton(mapping.index,value);
 						break;
 					case "axis":
 						if(mapping.negative) value=-value;
-						this.setAxis(mapping.index,value);
+						return this.setAxis(mapping.index,value);
 						break;
 					case "stick":
 						if(mapping.negative) value=-value;
@@ -154,10 +158,11 @@
 						let valueY=null;
 						if(mapping.axis==="x") valueX=value;
 						else valueY=value;
-						this.setStick(mapping.index,valueX,valueY);
+						return this.setStick(mapping.index,valueX,valueY);
 						break;
 				}
 			}
+			return false;
 		},
 		toJSON()
 		{
