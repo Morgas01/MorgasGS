@@ -6,7 +6,6 @@
 out/
 target/
 node_modules/
-build/
 *.log
 src/_css/
 package-lock.json
