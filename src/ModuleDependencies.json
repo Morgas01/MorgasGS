@@ -1,13 +1,17 @@
 {
-	"Axis.js": {
+	"gs.Axis": {
 		"deps": [],
 		"uses": []
 	},
-	"Button.js": {
+	"gs.Button": {
 		"deps": [],
 		"uses": []
 	},
-	"Controller.js": {
+	"gs.Component": {
+		"deps": [],
+		"uses": []
+	},
+	"gs.Controller": {
 		"deps": [
 			"Event"
 		],
@@ -20,7 +24,7 @@
 			"gs.Stick"
 		]
 	},
-	"Controller.Keyboard.js": {
+	"gs.Controller.Keyboard": {
 		"deps": [
 			"gs.Controller"
 		],
@@ -30,10 +34,72 @@
 			"gs.Stick"
 		]
 	},
-	"Stick.js": {
+	"gs.Game.Embedded": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope",
+			"Promise"
+		]
+	},
+	"gs.Game": {
+		"deps": [],
+		"uses": []
+	},
+	"gs.Game.Remote": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope"
+		]
+	},
+	"gs.GameSave": {
+		"deps": [
+			"DBObj"
+		],
+		"uses": []
+	},
+	"gs.MemCon": {
+		"deps": [
+			"gs.MemoryCard"
+		],
+		"uses": [
+			"ObjectConnector",
+			"gs.GameSave"
+		]
+	},
+	"gs.MemCon.Object": {
+		"deps": [
+			"gs.MemCon"
+		],
+		"uses": [
+			"ObjectConnector"
+		]
+	},
+	"gs.MemoryCard": {
+		"deps": [],
+		"uses": []
+	},
+	"gs.Stick": {
 		"deps": [],
 		"uses": [
 			"gs.Axis"
+		]
+	},
+	"gs.System": {
+		"deps": [],
+		"uses": [
+			"rescope"
+		]
+	},
+	"gs.Component.List": {
+		"deps": [
+			"gs.Component"
+		],
+		"uses": [
+			"rescope"
 		]
 	}
 }

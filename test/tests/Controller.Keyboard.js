@@ -1,4 +1,4 @@
-module("Controller",[
+module("Controller.Keyboard",[
 	function initialize(container)
 	{
 		new µ.gs.Controller.Keyboard();

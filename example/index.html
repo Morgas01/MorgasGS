@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>examples</title>
+
+	<script defer="defer" src="lib/Morgas-0.8.3.js"></script>
+	<script defer="defer" src="../build/MorgasGS-0.8.3.js"></script>
+	<script defer="defer" src="gameList.js"></script>
+	<script defer="defer" src="index.js"></script>
+
+	<link rel="stylesheet" href="../build/MorgasGS-0.8.3.css">
+	<link rel="stylesheet" href="index.css">
+</head>
+<body>
+	<div>
+		<select id="gameSelect">
+			<option value=""/>
+		</select>
+		<button id="goBtn">go!</button>
+	</div>
+	<div id="systemContainer"></div>
+	<details >
+		<summary>Keyboard controls</summary>
+		<div id="legend">
+			<div id="stick1" class="stick">
+				<button class="axisLabel stick_y">W</button>
+				<button class="axisLabel stick-x">A</button>
+				<button class="axisLabel stick-y">S</button>
+				<button class="axisLabel stick_x">D</button>
+				<div class="stickPosition"></div>
+			</div>
+			<div id="buttons">
+				<button id="b0">K</button>
+				<button id="b1">L</button>
+				<button id="b2">I</button>
+				<button id="b3">O</button>
+			</div>
+		</div>
+	</details>
+</body>
+</html>

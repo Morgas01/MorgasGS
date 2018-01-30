@@ -1,7 +1,17 @@
 {
 	"gs.Axis": "Axis.js",
 	"gs.Button": "Button.js",
+	"gs.Component": "Component.js",
 	"gs.Controller": "Controller.js",
 	"gs.Controller.Keyboard": "Controller.Keyboard.js",
-	"gs.Stick": "Stick.js"
+	"gs.Game.Embedded": "Game.Embedded.js",
+	"gs.Game": "Game.js",
+	"gs.Game.Remote": "Game.Remote.js",
+	"gs.GameSave": "GameSave.js",
+	"gs.MemCon": "MemoryCard.Connector.js",
+	"gs.MemCon.Object": "MemoryCard.Connector.Object.js",
+	"gs.MemoryCard": "MemoryCard.js",
+	"gs.Stick": "Stick.js",
+	"gs.System": "System.js",
+	"gs.Component.List": "components/List.js"
 }

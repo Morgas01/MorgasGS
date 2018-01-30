@@ -1,0 +1,68 @@
+html,body {
+	width:100%;
+	height:100%;
+	padding:0;
+	margin:0;
+	border:0 none;
+}
+body {
+	display:flex;
+	flex-direction: column;
+    align-items: center;
+}
+body > * {
+	margin: 1em;
+}
+#systemContainer {
+	flex-grow:1;
+	border:3px double;
+	width:80vw;
+	min-width:400px;
+	min-height:300px;
+}
+
+#legend {
+	display:flex;
+	align-items:center;
+}
+.stick {
+	height:50px;
+	width:50px;
+	position:relative;
+	border:1px solid;
+	margin:1.5em 2em;
+}
+.axisLabel, .stickPosition {
+	position:absolute;
+	z-index:1;
+}
+
+.stick_y {
+	bottom:100%;
+	right: 50%;
+    transform: translateX(50%);
+}
+.stick-x {
+	right:100%;
+	bottom: 50%;
+    transform: translateY(50%);
+}
+.stick-y {
+	top:100%;
+	right: 50%;
+    transform: translateX(50%);
+}
+.stick_x {
+	left:100%;
+	bottom: 50%;
+    transform: translateY(50%);
+}
+.stickPosition {
+    width:10px;
+    height:10px;
+    border:2px outset;
+    border-radius:100%;
+    transform: translate(-50%,-50%);
+    top:50%;
+    left:50%;
+}

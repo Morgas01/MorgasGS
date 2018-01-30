@@ -15,16 +15,17 @@
 			if(gameNames.has(sProt.name)) throw new RangeError("#Game:002 Game name must be unique");
 			gameNames.set(sProt.name,sub);
 		},
-		constructor:function()
+		constructor:function({elementTag="DIV",domElement=document.createElement(elementTag)}={})
 		{
 			this.state=null;
 			this.system=null; // set from System.setProgramm()
-			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("MorgasGS-Game");
+			this.domElement=domElement;
+			this.domElement.classList.add("game");
+			this.domElement.classList.add(this.name);
 
 			this.pause=true;
 		},
-		pause(value)
+		setPause(value)
 		{
 			this.pause=!!value;
 		},
@@ -54,12 +55,7 @@
 
 	gs.Game.getGameByName=function(name)
 	{
-		let gameClass=gameNames.get(name);
-		if(gameClass!=null)
-		{
-			return new gameClass();
-		}
-		return null;
+		return gameNames.get(name);
 	};
 
 	SMOD("gs.Game",gs.Game);

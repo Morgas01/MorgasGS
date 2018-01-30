@@ -8,6 +8,7 @@
 	});
 
 	MemoryCard.Connector=µ.Class(MemoryCard,{
+		[µ.Class.symbols.abstract]:true,
 		[µ.Class.symbols.onExtend]:function(sub)
 		{
 			if(typeof sub.prototype.getConnector!="function") throw new SyntaxError("#MemoryCard.Connector:001 no getConnector function defined");

@@ -83,7 +83,7 @@
 			let button=this.buttons[index];
 			if(button.setValue(value))
 			{
-				this.reportEvent(new gs.Controller.ChangeEvent("button",index,button.getState()));
+				this.reportEvent(new gs.Controller.ChangeEvent(this,"button",index,button.getState()));
 			}
 		},
 		setAxis:function(index,value)
@@ -96,7 +96,7 @@
 			let axis=this.axes[index];
 			if(axis.setValue(value))
 			{
-				this.reportEvent(new gs.Controller.ChangeEvent("axis",index,axis.getState()));
+				this.reportEvent(new gs.Controller.ChangeEvent(this,"axis",index,axis.getState()));
 			}
 		},
 		setStick:function(index,valueX,valueY)
@@ -109,7 +109,7 @@
 			let stick=this.sticks[index];
 			if(stick.setValue(valueX,valueY))
 			{
-				this.reportEvent(new gs.Controller.ChangeEvent("stick",index,stick.getState()));
+				this.reportEvent(new gs.Controller.ChangeEvent(this,"stick",index,stick.getState()));
 			}
 		},
 		toJSON()
@@ -136,8 +136,10 @@
 	gs.Controller.ChangeEvent=µ.Class(Event,
 	{
 		name:"controllerChange",
-		constructor:function(type,index,value)
+		constructor:function(controller,type,index,value)
 		{
+			/** @type {gs.Controller} */
+			this.controller=controller
 			/** @type {String} "button", "axis" or "stick" */
 			this.type=type;
 			/** @type {Number} */

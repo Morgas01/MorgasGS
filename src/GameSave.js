@@ -7,6 +7,7 @@
 	//SC=SC({});
 
 	gs.GameSave=µ.Class(DBObj,{
+		objectType:"GameSave",
 		constructor:function(param={})
 		{
 			this.mega(param);

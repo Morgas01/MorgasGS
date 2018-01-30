@@ -17,7 +17,7 @@
 			this.memoryCard=null;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("MorgasGS-System");
+			this.domElement.classList.add("System");
 			this.domElement.tabIndex=-1;
 
 			this.domElement.addEventListener("focus",this.pauseListener,false);
@@ -33,7 +33,7 @@
 			this.domElement.classList.toggle("pause",this.pause);
 			if(this.game!=null)
 			{
-				this.game.pause(this.pause);
+				this.game.setPause(this.pause);
 			}
 		},
 		keyListener(event)
@@ -67,6 +67,7 @@
 		addController(controller)
 		{
 			this.controllers.add(controller);
+			controller.addEventListener("controllerChange",this,this.propagateControllerChange)
 			return this;
 		},
 		propagateControllerChange(event)
@@ -83,6 +84,7 @@
 		removeController(controller)
 		{
 			this.controllers.delete(controller);
+			controller.removeEventListener("controllerChange",this);
 			return this;
 		},
 		setGame(game)
@@ -90,7 +92,7 @@
 			if(this.game!=null)
 			{
 				this.game.system=null;
-				this.game.pause(true);
+				this.game.setPause(true);
 				this.domElement.removeChild(this.game.domElement);
 			}
 			this.game=game;
@@ -101,7 +103,7 @@
 					this.game.system.setGame(null);
 				}
 				this.game.system=this;
-				this.game.pause(this.pause);
+				this.game.setPause(this.pause);
 				this.domElement.appendChild(this.game.domElement);
 			}
 		},
@@ -112,7 +114,7 @@
 			let param={state:this.program.state};
 			if(oldSave!=null)
 			{
-				param.oldSaves=[oldSave,...(oldSave.oldSaves.slice(0,this.OLD_SAVE_COUNT-1)];
+				param.oldSaves=[oldSave,...(oldSave.oldSaves.slice(0,this.OLD_SAVE_COUNT-1))];
 			}
 			return this.memoryCard.save(this.program.name,new SC.GameSave(param));
 		}

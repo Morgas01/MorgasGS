@@ -1,13 +1,13 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-	let MemCon=GMOD("gs.MemoryCard");
+	let MemCon=GMOD("gs.MemCon");
 
 	SC=SC({
 		ObjectConnector:"ObjectConnector"
 	});
 
 	MemCon.Object=µ.Class(MemCon,{
-		constructor:function(global=false;)
+		constructor:function(global=false)
 		{
 			this.connectors=new Map();
 			this.global=global;

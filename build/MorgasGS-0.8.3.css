@@ -1,0 +1,22 @@
+.System {
+  position: relative;
+  background-color: black;
+}
+.Game {
+  height: 100%;
+  width: 100%;
+  min-height: 300px;
+  min-width: 400px;
+}
+.Game.Embedded {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  background-color: black;
+}
+.Component.List {
+  display: grid;
+  grid-template-columns: repeat(var(--list-columns, 1), 1fr);
+}
+
+//# sourceMappingURL=MorgasGS-0.8.3.css.map
