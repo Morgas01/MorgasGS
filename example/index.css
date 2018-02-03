@@ -21,6 +21,10 @@ body > * {
 	min-height:300px;
 }
 
+#systemContainer .System {
+	height:100%;
+}
+
 #legend {
 	display:flex;
 	align-items:center;

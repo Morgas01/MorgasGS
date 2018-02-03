@@ -1,1 +1,13 @@
-.TickTackToe
+.TickTackToe .List {
+	grid-gap:1em;
+	height: 100%;
+	padding: 1em;
+	box-sizing: border-box;
+}
+.TickTackToe .List > div {
+	box-sizing:border-box;
+	background-color:blue;
+}
+.TickTackToe .List > .active {
+	border:1ex solid white;
+}

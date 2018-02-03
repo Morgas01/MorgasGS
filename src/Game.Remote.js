@@ -25,7 +25,7 @@
 		{
 			SC.rs.all(this,["_onLoad","_onMessage"]);
 			this.mega({elementTag:"IFRAME"});
-			this.domElement.classList.add("remote")
+			this.domElement.classList.add("Remote")
 			this.domElement.sandbox="allow-orientation-lock allow-pointer-lock allow-scripts allow-same-origin";
 			this.domElement.src=this.url;
 			this.domElement.addEventListener("load",this._onLoad,false);

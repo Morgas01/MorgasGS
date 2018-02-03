@@ -18,7 +18,7 @@
 			param.domElement=document.body;
 
 			this.mega(param);
-			this.domElement.classList.add("embedded");
+			this.domElement.classList.add("Embedded");
 
 			({
 				timeout:this.timeout=50000

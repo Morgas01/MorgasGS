@@ -8,6 +8,11 @@
   min-height: 300px;
   min-width: 400px;
 }
+.Game.Remote {
+  border: 0 none;
+  margin: 0;
+  padding: 0;
+}
 .Game.Embedded {
   position: absolute;
   margin: 0;

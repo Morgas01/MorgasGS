@@ -20,7 +20,7 @@
 			this.state=null;
 			this.system=null; // set from System.setProgramm()
 			this.domElement=domElement;
-			this.domElement.classList.add("game");
+			this.domElement.classList.add("Game");
 			this.domElement.classList.add(this.name);
 
 			this.pause=true;

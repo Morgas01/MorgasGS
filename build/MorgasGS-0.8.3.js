@@ -263,7 +263,8 @@
 			this.state=null;
 			this.system=null; // set from System.setProgramm()
 			this.domElement=domElement;
-			this.domElement.classList.add("game");
+			this.domElement.classList.add("Game");
+			this.domElement.classList.add(this.name);
 
 			this.pause=true;
 		},
@@ -331,7 +332,7 @@
 		{
 			SC.rs.all(this,["_onLoad","_onMessage"]);
 			this.mega({elementTag:"IFRAME"});
-			this.domElement.classList.add("remote")
+			this.domElement.classList.add("Remote")
 			this.domElement.sandbox="allow-orientation-lock allow-pointer-lock allow-scripts allow-same-origin";
 			this.domElement.src=this.url;
 			this.domElement.addEventListener("load",this._onLoad,false);
@@ -416,7 +417,7 @@
 			param.domElement=document.body;
 
 			this.mega(param);
-			this.domElement.classList.add("embedded");
+			this.domElement.classList.add("Embedded");
 
 			({
 				timeout:this.timeout=50000
@@ -967,14 +968,15 @@
 			this.mega(controllerMapping);
 
 			this.columns=1;
-			this.setColumns(columns);
 			this.data=data;
 			this.mapper=mapper;
 
 			this.active=active;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("List");
+			this.domElement.classList.add("Component","List");
+
+			this.setColumns(columns);
 
 			this.movement={
 				method:null,
@@ -1013,7 +1015,7 @@
 		setColumns(columns)
 		{
 			this.columns=Math.max(columns,1);
-			this.domElement.style[--list-columns]=this.columns;
+			this.domElement.style.setProperty("--list-columns",this.columns);
 		},
 		actions:{
 			move(stick)

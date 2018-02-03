@@ -14,14 +14,15 @@
 			this.mega(controllerMapping);
 
 			this.columns=1;
-			this.setColumns(columns);
 			this.data=data;
 			this.mapper=mapper;
 
 			this.active=active;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("List");
+			this.domElement.classList.add("Component","List");
+
+			this.setColumns(columns);
 
 			this.movement={
 				method:null,
@@ -60,7 +61,7 @@
 		setColumns(columns)
 		{
 			this.columns=Math.max(columns,1);
-			this.domElement.style[--list-columns]=this.columns;
+			this.domElement.style.setProperty("--list-columns",this.columns);
 		},
 		actions:{
 			move(stick)
