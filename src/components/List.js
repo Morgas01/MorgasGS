@@ -68,20 +68,28 @@
 			{
 				let absX=Math.abs(stick.x);
 				let absY=Math.abs(stick.y);
+
+				let method;
 				if(absX<33&&absY<33)
 				{
 					this._stopMovement();
+					return;
 				}
 				else if(absX>=absY)
 				{
-					this.movement.method=stick.x<0?this.moveLeft:this.moveRight;
+					method=stick.x<0?this.moveLeft:this.moveRight;
 				}
 				else
 				{
-					this.movement.method=stick.y<0?this.moveUp:this.moveDown;
+					method=stick.y<0?this.moveDown:this.moveUp;
 				}
 
-				this._step();
+				if(method!=this.movement.method)
+				{
+					this._stopMovement();
+					this.movement.method=method;
+					this._step();
+				}
 			}
 		},
 		_stopMovement()
@@ -102,7 +110,7 @@
 		{
 			this.domElement.children[this.active].classList.remove("active");
 
-			if(this.active<0)this.active=this.data.length;
+			if(this.active<=0)this.active=this.data.length;
 			this.active--;
 
 			this.domElement.children[this.active].classList.add("active");
@@ -120,7 +128,13 @@
 		{
 			this.domElement.children[this.active].classList.remove("active");
 
-			if(this.active-this.columns<0) this.active=this.data.length-(this.data.length%this.columns-this.active);
+			if(this.active-this.columns<0)
+			{
+				let fullList=this.columns*Math.ceil(this.data.length/this.columns);
+				this.active=fullList-(this.columns-this.active);
+				if(this.active>=this.data.length) this.active-=this.columns;
+
+			}
 			else this.active-=this.columns;
 
 			this.domElement.children[this.active].classList.add("active");
@@ -139,9 +153,9 @@
 			"null":"move"
 		}
 	}]]);
-	Component.INITIAL_MOVEMENT_TIMEOUT=1000;
+	Component.INITIAL_MOVEMENT_TIMEOUT=800;
 	Component.MIN_MOVEMENT_TIMEOUT=125;
-	Component.MOVEMENT_ACCELERATION=1.25;
+	Component.MOVEMENT_ACCELERATION=1.2;
 
 	SMOD("gs.Component.List",Component.List);
 

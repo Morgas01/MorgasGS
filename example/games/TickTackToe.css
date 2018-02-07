@@ -1,13 +1,63 @@
+.TickTackToe {
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	line-height: 0;
+}
 .TickTackToe .List {
-	grid-gap:1em;
-	height: 100%;
-	padding: 1em;
+	grid-gap:.1em;
+	height: 3.8em;
+	width: 3.8em;
+	padding: .1em;
 	box-sizing: border-box;
 }
 .TickTackToe .List > div {
 	box-sizing:border-box;
 	background-color:blue;
+	position:relative;
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	color:white;
 }
-.TickTackToe .List > .active {
-	border:1ex solid white;
+.TickTackToe:not(.congratulation) .List > .active::after {
+	content:"";
+	border:.1ex solid white;
+	position:absolute;
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+	animation:activeTile .25s ease-in-out 0s alternate infinite;
+}
+@keyframes activeTile {
+	from {
+		width:calc(100% + .1ex);
+		height:calc(100% + .1ex);
+	}
+
+	to {
+		width:calc(100% - .1em);
+		height:calc(100% - .1em);
+	}
+}
+.TickTackToe .congratulationMessage {
+	position:absolute;
+	left:50%;
+	top:0;
+	font-size:4rem;
+	line-height:1em;
+	background-color:white;
+	color:black;
+	padding:1ex 2em;
+	animation:congratulationMessage 1s cubic-bezier(.50,1.6,.9,1) forwards;
+}
+@keyframes congratulationMessage {
+	from {
+		top:0;
+		transform:translate(-50%,-100%);
+	}
+	to {
+		top:1em;
+		transform:translate(-50%,0);
+	}
 }

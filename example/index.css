@@ -21,8 +21,21 @@ body > * {
 	min-height:300px;
 }
 
-#systemContainer .System {
+.System {
 	height:100%;
+}
+.System.pause::after {
+    content: "pause";
+    color: white;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: rgba(50,50,50,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #legend {
@@ -69,4 +82,7 @@ body > * {
     transform: translate(-50%,-50%);
     top:50%;
     left:50%;
+}
+#buttons {
+	margin-left:1em;
 }

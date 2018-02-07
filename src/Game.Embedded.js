@@ -13,7 +13,7 @@
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(param={})
 		{
-			SC.rs.all(this,["_onMessage"]);
+			SC.rs.all(this,["_onMessage","_onFocus"]);
 
 			param.domElement=document.body;
 
@@ -25,6 +25,8 @@
 			}=param);
 
 			this.requestMap=new Map();
+			window.addEventListener("message",this._onMessage);
+			window.addEventListener("focus",this._onFocus);
 		},
 		_send(message)
 		{
@@ -66,6 +68,18 @@
 					else signal.resolve(message.data);
 				}
 			}
+			else
+			{
+				switch(message.type)
+				{
+					case "pause":
+						this.setPause(message.value);
+						break;
+					case "controllerEvent":
+						this.onControllerChange(message.event);
+						break;
+				}
+			}
 		},
 		save(oldSave)
 		{
@@ -74,6 +88,13 @@
 		getSaves()
 		{
 			return this._request({type:"getSaves"});
+		},
+		_onFocus()
+		{
+			if(document.activeElement===document.body)
+			{
+				this._send({type:"reclaimFocus"});
+			}
 		}
 	});
 

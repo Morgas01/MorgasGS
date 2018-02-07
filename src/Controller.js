@@ -14,9 +14,13 @@
 		Stick:"gs.Stick"
 	});
 
+	let NEXT_CONTROLLER_ID=0;
+
 	gs.Controller=µ.Class({
 		constructor:function({buttons=[],axes=[],sticks=[]}={})
 		{
+			this.ID=NEXT_CONTROLLER_ID++;
+
 			this.buttons=[];
 			this.axes=[];
 			this.sticks=[];
@@ -139,7 +143,7 @@
 		constructor:function(controller,type,index,value)
 		{
 			/** @type {gs.Controller} */
-			this.controller=controller
+			this.controllerID=controller.ID
 			/** @type {String} "button", "axis" or "stick" */
 			this.type=type;
 			/** @type {Number} */

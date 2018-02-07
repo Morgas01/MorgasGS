@@ -23,13 +23,15 @@
 		},
 		constructor:function()
 		{
-			SC.rs.all(this,["_onLoad","_onMessage"]);
+			SC.rs.all(this,["_onLoad","_onMessage","_sendPause"]);
 			this.mega({elementTag:"IFRAME"});
 			this.domElement.classList.add("Remote")
 			this.domElement.sandbox="allow-orientation-lock allow-pointer-lock allow-scripts allow-same-origin";
 			this.domElement.src=this.url;
 			this.domElement.addEventListener("load",this._onLoad,false);
-			this.domElement.addEventListener("message",this._onMessage,false);
+			window.addEventListener("message",this._onMessage,false);
+
+			let pauseTimer=null;
 		},
 		_onLoad()
 		{
@@ -49,6 +51,9 @@
 						break;
 					case "getSaves":
 						promise=this.getSaves(message.oldSave);
+						break;
+					case "reclaimFocus":
+						this.reclaimFocus();
 						break;
 				}
 				if(promise)
@@ -71,7 +76,12 @@
 		},
 		setPause(value)
 		{
-			this.pause=!!value;
+			this.mega(value);
+			clearTimeout(this.pauseTimer);
+			this.pauseTimer=setTimeout(this._sendPause,15)
+		},
+		_sendPause()
+		{
 			this._send({
 				type:"pause",
 				value:this.pause
@@ -83,6 +93,18 @@
 				type:"controllerEvent",
 				event:event
 			});
+		},
+		reclaimFocus()
+		{
+			if(this.system!=null)
+			{
+				this.system.domElement.focus();
+			}
+		},
+		destroy()
+		{
+			window.removeEventListener("message",this._onMessage,false);
+			this.mega();
 		}
 	});
 

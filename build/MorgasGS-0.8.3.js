@@ -17,11 +17,11 @@
 			this.memoryCard=null;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("System");
+			this.domElement.classList.add("System","pause");
 			this.domElement.tabIndex=-1;
 
-			this.domElement.addEventListener("focus",this.pauseListener,false);
-			this.domElement.addEventListener("blur",this.pauseListener,false);
+			this.domElement.addEventListener("focusin",this.pauseListener,false);
+			this.domElement.addEventListener("focusout",this.pauseListener,false);
 
 			this.domElement.addEventListener("keydown",this.keyListener,false);
 			this.domElement.addEventListener("keyup",this.keyListener,false);
@@ -29,7 +29,7 @@
 		OLD_SAVE_COUNT:3, //0 => keep all saves; should NEVER be negative
 		pauseListener(event)
 		{
-			this.pause=(event.type==="blur");
+			this.pause=(event.type==="focusout"||event.target!==this.domElement);
 			this.domElement.classList.toggle("pause",this.pause);
 			if(this.game!=null)
 			{
@@ -330,13 +330,15 @@
 		},
 		constructor:function()
 		{
-			SC.rs.all(this,["_onLoad","_onMessage"]);
+			SC.rs.all(this,["_onLoad","_onMessage","_sendPause"]);
 			this.mega({elementTag:"IFRAME"});
 			this.domElement.classList.add("Remote")
 			this.domElement.sandbox="allow-orientation-lock allow-pointer-lock allow-scripts allow-same-origin";
 			this.domElement.src=this.url;
 			this.domElement.addEventListener("load",this._onLoad,false);
-			this.domElement.addEventListener("message",this._onMessage,false);
+			window.addEventListener("message",this._onMessage,false);
+
+			let pauseTimer=null;
 		},
 		_onLoad()
 		{
@@ -356,6 +358,9 @@
 						break;
 					case "getSaves":
 						promise=this.getSaves(message.oldSave);
+						break;
+					case "reclaimFocus":
+						this.reclaimFocus();
 						break;
 				}
 				if(promise)
@@ -378,7 +383,12 @@
 		},
 		setPause(value)
 		{
-			this.pause=!!value;
+			this.mega(value);
+			clearTimeout(this.pauseTimer);
+			this.pauseTimer=setTimeout(this._sendPause,15)
+		},
+		_sendPause()
+		{
 			this._send({
 				type:"pause",
 				value:this.pause
@@ -390,6 +400,18 @@
 				type:"controllerEvent",
 				event:event
 			});
+		},
+		reclaimFocus()
+		{
+			if(this.system!=null)
+			{
+				this.system.domElement.focus();
+			}
+		},
+		destroy()
+		{
+			window.removeEventListener("message",this._onMessage,false);
+			this.mega();
 		}
 	});
 
@@ -412,7 +434,7 @@
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(param={})
 		{
-			SC.rs.all(this,["_onMessage"]);
+			SC.rs.all(this,["_onMessage","_onFocus"]);
 
 			param.domElement=document.body;
 
@@ -424,6 +446,8 @@
 			}=param);
 
 			this.requestMap=new Map();
+			window.addEventListener("message",this._onMessage);
+			window.addEventListener("focus",this._onFocus);
 		},
 		_send(message)
 		{
@@ -465,6 +489,18 @@
 					else signal.resolve(message.data);
 				}
 			}
+			else
+			{
+				switch(message.type)
+				{
+					case "pause":
+						this.setPause(message.value);
+						break;
+					case "controllerEvent":
+						this.onControllerChange(message.event);
+						break;
+				}
+			}
 		},
 		save(oldSave)
 		{
@@ -473,6 +509,13 @@
 		getSaves()
 		{
 			return this._request({type:"getSaves"});
+		},
+		_onFocus()
+		{
+			if(document.activeElement===document.body)
+			{
+				this._send({type:"reclaimFocus"});
+			}
 		}
 	});
 
@@ -544,9 +587,13 @@
 		Stick:"gs.Stick"
 	});
 
+	let NEXT_CONTROLLER_ID=0;
+
 	gs.Controller=µ.Class({
 		constructor:function({buttons=[],axes=[],sticks=[]}={})
 		{
+			this.ID=NEXT_CONTROLLER_ID++;
+
 			this.buttons=[];
 			this.axes=[];
 			this.sticks=[];
@@ -669,7 +716,7 @@
 		constructor:function(controller,type,index,value)
 		{
 			/** @type {gs.Controller} */
-			this.controller=controller
+			this.controllerID=controller.ID
 			/** @type {String} "button", "axis" or "stick" */
 			this.type=type;
 			/** @type {Number} */
@@ -885,18 +932,18 @@
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(controllerMapping=new Map())
 		{
-			/** @type {Map.<Controller,controllerMapping>} */
+			/** @type {Map.<Number,controllerMapping>} */
 			this.controllerMapping=controllerMapping;
-			/** @type {WeakMap.<Controller,Set<Number>>} */
+			/** @type {WeakMap.<Number,Set<Number>>} */
 			this.pressedButtons=new WeakMap();
 		},
-		addControllerMapping(controller,type,index,action)
+		addControllerMapping(controllerID,type,index,action)
 		{
-			if(!this.controllerMapping.has(controller))
+			if(!this.controllerMapping.has(controllerID))
 			{
-				this.controllerMapping.set(controller,{});
+				this.controllerMapping.set(controllerID,{});
 			}
-			let mapping=this.controllerMapping.get(controller);
+			let mapping=this.controllerMapping.get(controllerID);
 			if(!mapping[type]) mapping[type]={};
 			mapping[type][index]=action;
 			return this;
@@ -909,10 +956,10 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.controllerMapping.get(event.controller);
+			let mapping=this.controllerMapping.get(event.controllerID);
 			if(!mapping)
 			{
-				mapping=this.mappings.get(null);
+				mapping=this.controllerMapping.get(null);
 			}
 			if(mapping&&mapping[event.type])
 			{
@@ -1022,20 +1069,28 @@
 			{
 				let absX=Math.abs(stick.x);
 				let absY=Math.abs(stick.y);
+
+				let method;
 				if(absX<33&&absY<33)
 				{
 					this._stopMovement();
+					return;
 				}
 				else if(absX>=absY)
 				{
-					this.movement.method=stick.x<0?this.moveLeft:this.moveRight;
+					method=stick.x<0?this.moveLeft:this.moveRight;
 				}
 				else
 				{
-					this.movement.method=stick.y<0?this.moveUp:this.moveDown;
+					method=stick.y<0?this.moveDown:this.moveUp;
 				}
 
-				this._step();
+				if(method!=this.movement.method)
+				{
+					this._stopMovement();
+					this.movement.method=method;
+					this._step();
+				}
 			}
 		},
 		_stopMovement()
@@ -1056,7 +1111,7 @@
 		{
 			this.domElement.children[this.active].classList.remove("active");
 
-			if(this.active<0)this.active=this.data.length;
+			if(this.active<=0)this.active=this.data.length;
 			this.active--;
 
 			this.domElement.children[this.active].classList.add("active");
@@ -1074,7 +1129,13 @@
 		{
 			this.domElement.children[this.active].classList.remove("active");
 
-			if(this.active-this.columns<0) this.active=this.data.length-(this.data.length%this.columns-this.active);
+			if(this.active-this.columns<0)
+			{
+				let fullList=this.columns*Math.ceil(this.data.length/this.columns);
+				this.active=fullList-(this.columns-this.active);
+				if(this.active>=this.data.length) this.active-=this.columns;
+
+			}
 			else this.active-=this.columns;
 
 			this.domElement.children[this.active].classList.add("active");
@@ -1093,9 +1154,9 @@
 			"null":"move"
 		}
 	}]]);
-	Component.INITIAL_MOVEMENT_TIMEOUT=1000;
+	Component.INITIAL_MOVEMENT_TIMEOUT=800;
 	Component.MIN_MOVEMENT_TIMEOUT=125;
-	Component.MOVEMENT_ACCELERATION=1.25;
+	Component.MOVEMENT_ACCELERATION=1.2;
 
 	SMOD("gs.Component.List",Component.List);
 

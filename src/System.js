@@ -17,11 +17,11 @@
 			this.memoryCard=null;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("System");
+			this.domElement.classList.add("System","pause");
 			this.domElement.tabIndex=-1;
 
-			this.domElement.addEventListener("focus",this.pauseListener,false);
-			this.domElement.addEventListener("blur",this.pauseListener,false);
+			this.domElement.addEventListener("focusin",this.pauseListener,false);
+			this.domElement.addEventListener("focusout",this.pauseListener,false);
 
 			this.domElement.addEventListener("keydown",this.keyListener,false);
 			this.domElement.addEventListener("keyup",this.keyListener,false);
@@ -29,7 +29,7 @@
 		OLD_SAVE_COUNT:3, //0 => keep all saves; should NEVER be negative
 		pauseListener(event)
 		{
-			this.pause=(event.type==="blur");
+			this.pause=(event.type==="focusout"||event.target!==this.domElement);
 			this.domElement.classList.toggle("pause",this.pause);
 			if(this.game!=null)
 			{

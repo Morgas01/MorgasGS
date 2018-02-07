@@ -14,18 +14,18 @@
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(controllerMapping=new Map())
 		{
-			/** @type {Map.<Controller,controllerMapping>} */
+			/** @type {Map.<Number,controllerMapping>} */
 			this.controllerMapping=controllerMapping;
-			/** @type {WeakMap.<Controller,Set<Number>>} */
+			/** @type {WeakMap.<Number,Set<Number>>} */
 			this.pressedButtons=new WeakMap();
 		},
-		addControllerMapping(controller,type,index,action)
+		addControllerMapping(controllerID,type,index,action)
 		{
-			if(!this.controllerMapping.has(controller))
+			if(!this.controllerMapping.has(controllerID))
 			{
-				this.controllerMapping.set(controller,{});
+				this.controllerMapping.set(controllerID,{});
 			}
-			let mapping=this.controllerMapping.get(controller);
+			let mapping=this.controllerMapping.get(controllerID);
 			if(!mapping[type]) mapping[type]={};
 			mapping[type][index]=action;
 			return this;
@@ -38,10 +38,10 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.controllerMapping.get(event.controller);
+			let mapping=this.controllerMapping.get(event.controllerID);
 			if(!mapping)
 			{
-				mapping=this.mappings.get(null);
+				mapping=this.controllerMapping.get(null);
 			}
 			if(mapping&&mapping[event.type])
 			{
