@@ -22,10 +22,12 @@ let keyboardController=new µ.gs.Controller.Keyboard({
 			"KeyD":{index:0,axis:"x",negative:false},
 		},
 		buttons:{
-			"KeyK":0,
-			"KeyL":1,
-			"KeyI":2,
-			"KeyO":3,
+			"KeyB":0,
+			"KeyN":1,
+			"KeyG":2,
+			"KeyH":3,
+			"KeyQ":4,
+			"KeyE:5
 		},
 	}
 });

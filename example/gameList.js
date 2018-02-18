@@ -1,3 +1,4 @@
 window.gameList=[
+	"SystemSettings",
 	"TickTackToe"
 ];

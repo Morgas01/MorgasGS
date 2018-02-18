@@ -19,6 +19,55 @@
   padding: 0;
   background-color: black;
 }
+.Game.SystemSettings {
+  background-color: white;
+}
+.Game.SystemSettings .actions {
+  display: flex;
+  flex-direction: column;
+}
+.Game.SystemSettings .controllerConfig .menu {
+  box-sizing: border-box;
+  display: flex;
+}
+.Game.SystemSettings .controllerConfig .menu > *,
+.Game.SystemSettings .controllerConfig .menu .addController [data-action] {
+  cursor: pointer;
+  padding: 8px;
+}
+.Game.SystemSettings .controllerConfig .menu > *:hover,
+.Game.SystemSettings .controllerConfig .menu .addController [data-action]:hover {
+  border: 4px solid;
+  padding: 4px;
+}
+.Game.SystemSettings .controllerConfig .menu .addController {
+  position: relative;
+}
+.Game.SystemSettings .controllerConfig .menu .addController > div {
+  background-color: white;
+  position: absolute;
+  top: 100%;
+  left: 100%;
+  display: none;
+  box-shadow: .25ex .25ex 1ex black;
+}
+.Game.SystemSettings .controllerConfig .menu .addController:hover > div {
+  top: calc(100% + 4px);
+  left: calc(100% + 4px);
+  padding: 0;
+}
+.Game.SystemSettings .controllerConfig .menu .addController:focus > div {
+  display: block;
+}
+.Game.SystemSettings .controllerConfig .list {
+  display: table;
+}
+.Game.SystemSettings .controllerConfig .list label {
+  display: table-row;
+}
+.Game.SystemSettings .controllerConfig .list label > * {
+  display: table-cell;
+}
 .Component.List {
   display: grid;
   grid-template-columns: repeat(var(--list-columns, 1), 1fr);

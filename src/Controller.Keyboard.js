@@ -63,7 +63,7 @@
 		},
 		associateButton(key,index)
 		{
-			if(index in this.buttons)
+			if(!(index in this.buttons))
 			{
 				this.buttons[index]=new SC.Button();
 			}
@@ -74,7 +74,7 @@
 		},
 		associateAxis(key,index,negative)
 		{
-			if(index in this.axes)
+			if(!(index in this.axes))
 			{
 				this.axes[index]=new SC.Axis();
 			}
@@ -92,7 +92,7 @@
 		 */
 		associateStick(key,index,axis,negative)
 		{
-			if(index in this.sticks)
+			if(!(index in this.sticks))
 			{
 				this.sticks[index]=new SC.Stick();
 			}

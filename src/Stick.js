@@ -12,6 +12,14 @@
 			this.xAxis=xAxis;
 			this.yAxis=yAxis;
 		},
+		setXAxis(axis)
+		{
+			this.xAxis=axis;
+		},
+		setYAxis(axis)
+		{
+			this.yAxis=axis;
+		},
 		setValue(valueX,valueY)
 		{
 			let rtn=this.xAxis.setValue(valueX);

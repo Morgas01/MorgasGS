@@ -9,7 +9,7 @@
 	gs.System=µ.Class({
 		constructor:function()
 		{
-			SC.rs.all(this,["pauseListener","keyListener"]);
+			SC.rs.all(this,["pauseListener","keyListener","doPoll"]);
 
 			this.controllers=new Set();
 			this.pause=true;
@@ -25,15 +25,27 @@
 
 			this.domElement.addEventListener("keydown",this.keyListener,false);
 			this.domElement.addEventListener("keyup",this.keyListener,false);
+
+			this.poll=null;
+
 		},
 		OLD_SAVE_COUNT:3, //0 => keep all saves; should NEVER be negative
 		pauseListener(event)
 		{
-			this.pause=(event.type==="focusout"||event.target!==this.domElement);
+			this.pause=(event.type==="focusout");
 			this.domElement.classList.toggle("pause",this.pause);
 			if(this.game!=null)
 			{
 				this.game.setPause(this.pause);
+			}
+			if(this.pause)
+			{
+				cancelAnimationFrame(this.poll);
+				this.poll=null;
+			}
+			else if (this.shouldPoll())
+			{
+				this.doPoll();
 			}
 		},
 		keyListener(event)
@@ -54,6 +66,34 @@
 					event.preventDefault();
 				}
 			}
+		},
+		shouldPoll()
+		{
+			if(this.poll!==null) return false;
+
+			if(HMOD("gs.Controller.Gamepad"))
+			{
+				let Gamepad=GMOD("gs.Controller.Gamepad");
+				for(let controller of this.controllers)
+				{
+					if(controller instanceof Gamepad) return true;
+				}
+			}
+
+			return false;
+		},
+		doPoll()
+		{
+			//TODO hold list of gamepads?
+			if(HMOD("gs.Controller.Gamepad"))
+			{
+				let Gamepad=GMOD("gs.Controller.Gamepad");
+				for(let controller of this.controllers)
+				{
+					if(controller instanceof Gamepad) controller.update();
+				}
+			}
+			this.poll=requestAnimationFrame(this.doPoll);
 		},
 		appendTo(element)
 		{
@@ -307,6 +347,275 @@
 /********************/
 (function(µ,SMOD,GMOD,HMOD,SC){
 
+    let gs=µ.gs=µ.gs||{};
+
+	SC=SC({
+		Axis:"gs.Axis"
+	});
+
+	gs.Stick=µ.Class({
+		constructor:function(xAxis=new SC.Axis(),yAxis=new SC.Axis())
+		{
+			this.xAxis=xAxis;
+			this.yAxis=yAxis;
+		},
+		setXAxis(axis)
+		{
+			this.xAxis=axis;
+		},
+		setYAxis(axis)
+		{
+			this.yAxis=axis;
+		},
+		setValue(valueX,valueY)
+		{
+			let rtn=this.xAxis.setValue(valueX);
+			rtn|=this.yAxis.setValue(valueY);
+			return rtn;
+		},
+		getState()
+		{
+			return {
+				x:this.xAxis.value,
+				y:this.yAxis.value
+			};
+		},
+		toJSON()
+		{
+			return {
+				xAxis:this.xAxis,
+				yAxis:this.yAxis
+			};
+		}
+	});
+
+	gs.Stick.fromJSON=function(json)
+	{
+		return new gs.Stick({
+			xAxis:new SC.Acis(json.xAxis),
+			yAxis:new SC.Acis(json.yAxis)
+		});
+	};
+
+	SMOD("gs.Stick",gs.Stick);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let Game=GMOD("gs.Game");
+
+	SC=SC({
+		rescope:"rescope",
+		//for ControllerConfig
+		Keyboard:"gs.Controller.Keyboard",
+		Gamepad:"gs.Controller.Gamepad"
+	});
+
+	Game.SystemSettings=µ.Class(Game,{
+		name:"SystemSettings",
+		constructor:function(callback)
+		{
+			SC.rescope.all(this,["onAction"]);
+			this.mega();
+			this.busy=null;
+			this.callback=callback;
+			this.actionsContainer=document.createElement("DIV");
+			this.actionsContainer.classList.add("actions");
+			this.actionsContainer.innerHTML=`
+				<button data-action="controllerConfig">Controller Config</button>
+				<button data-action="exit">Exit</button>
+			`;
+			this.actionsContainer.addEventListener("click",this.onAction);
+			this.domElement.appendChild(this.actionsContainer);
+		},
+		onAction(event)
+		{
+			if(this.busy) return;
+			switch(event.target.dataset.action)
+			{
+				case "controllerConfig":
+					this.busy=Game.SystemSettings.controllerConfig(this);
+					break;
+				case "exit":
+					if(this.callback) this.callback();
+					return;
+			}
+			this.actionsContainer.remove();
+			this.busy.catch(µ.logger.error)
+			.then(()=>
+			{
+				this.domElement.appendChild(this.actionsContainer);
+				this.busy=null;
+			});
+		}
+	});
+
+	SMOD("gs.Game.SystemSettings",Game.SystemSettings);
+
+	let controllerConfig=Game.SystemSettings.controllerConfig=function(game)
+	{
+		let system=game.system;
+		let domElement=document.createElement("DIV");
+		domElement.classList.add("controllerConfig");
+		let menu=document.createElement("DIV");
+		menu.classList.add("menu");
+		menu.innerHTML=`
+			<div class="addController" tabindex="-1">
+				<span>➕</span>
+				<div>
+					<div data-action="addGamepad">🎮</div>
+					<div data-action="addKeyboard">⌨</div>
+				</div>
+			</div>
+			<div data-action="edit">⚙</div>
+			<div data-action="remove">➖</div>
+		`;
+		domElement.appendChild(menu);
+
+
+		let list=document.createElement("DIV");
+		list.classList.add("list");
+		domElement.appendChild(list);
+		let controllerMap=new Map();
+		let controllerIcons=new Map([
+			[SC.Keyboard.prototype.constructor,"⌨"],
+			[SC.Gamepad.prototype.constructor,"🎮"],
+		]);
+
+		let counter=0;
+		for(let controller of system.controllers)
+		{
+			let element=document.createElement("LABEL");
+			element.innerHTML=`
+				<input type="radio" name="ControllerConfig-list">
+				<div>${controllerIcons.get(controller.constructor)||"⁈"}</div>
+				<div>test ${++counter}
+			`;
+			controllerMap.set(element,controller);
+			controllerMap.set(controller,element);
+			list.appendChild(element);
+		}
+
+		menu.addEventListener("click",function(event)
+		{
+			switch(event.target.dataset.action)
+			{
+				case "addGamepad":
+					controllerConfig.selectGamepad(game,domElement)
+					.then(newGameCon=>{
+						system.addController(newGameCon);
+						controllerConfig.edit(newGameCon,domElement);
+					});
+					break;
+				case "addKeyboard":
+					let newKeyCon=new SC.Keyboard();
+					system.addController(newKeyCon);
+					controllerConfig.edit(newKeyCon,domElement);
+					break;
+				case "edit":
+					let selected=list.querySelector(":checked").parentNode;
+					let controller=controllerMap.get(selected);
+					controllerConfig.edit(controller,domElement);
+					break;
+				case "remove":
+					break;
+			}
+		});
+
+		let okBtn=document.createElement("BUTTON");
+		okBtn.textContent="OK";
+		domElement.appendChild(okBtn);
+		game.domElement.appendChild(domElement);
+		return new Promise(function(resolve)
+		{
+			okBtn.addEventListener("click",function()
+			{
+				game.domElement.removeChild(domElement);
+				resolve();
+			});
+		});
+	};
+	controllerConfig.edit=function(controller,domElement)
+	{
+		switch(controller.constructor)
+		{
+			case SC.Keyboard.prototype.constructor:
+				// TODO
+				//controllerConfig.edit.Keyboard(controller,domElement);
+				break;
+			case SC.Gamepad.prototype.constructor:
+				controllerConfig.edit.Gamepad(controller,domElement);
+				break;
+		}
+	};
+	controllerConfig.selectGamepad=function(game,domElement)
+	{
+		return new Promise(function(resolve,reject)
+		{
+			let chooseContainer=document.createElement("DIV");
+			chooseContainer.classList.add("selectGamepad");
+
+			let gamepads;
+			let updateChoice=function()
+			{
+				gamepads=navigator.getGamepads();
+				for(let controller of game.system.controllers)
+				{
+					if(controller instanceof SC.Gamepad)
+					{
+						gamepads[controller.gamepad.index]=null;
+					}
+				}
+				gamepads=gamepads.filter(µ.constantFunctions.pass);
+				chooseContainer.innerHTML=`
+					<select>
+						<option value=""/>
+						${gamepads.map(g=>
+						`<option value="${g.index}">${g.id}</option>`)
+						.join("\n")}
+					</select>
+					<div class="gamepad-hint">press any button to activate gamepad</div>
+					<div>
+						<button data-action="ok">OK</button>
+						<button data-action="cancel">Cancel</button>
+					</div>
+				`;
+			};
+			window.addEventListener("gamepadconnected",updateChoice);
+			updateChoice();
+			domElement.appendChild(chooseContainer);
+
+			chooseContainer.addEventListener("click",function(event)
+			{
+				switch(event.target.dataset.action)
+				{
+					case "cancel":
+						window.removeEventListener("gamepadconnected",updateChoice);
+						reject();
+						break;
+					case "ok":
+						let select=chooseContainer.children[0];
+						let gamepad=gamepads[select.value]
+						if(gamepad)
+						{
+							window.removeEventListener("gamepadconnected",updateChoice);
+							resolve(new SC.Gamepad(gamepad));
+						}
+						break;
+				}
+			});
+		});
+	};
+	controllerConfig.edit.Gamepad=function(controller,domElement)
+	{
+
+	};
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
 	let Game=GMOD("gs.Game");
 
 	SC=SC({
@@ -520,54 +829,6 @@
 	});
 
 	SMOD("gs.Game.Embedded",Game.Embedded);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-    let gs=µ.gs=µ.gs||{};
-
-	SC=SC({
-		Axis:"gs.Axis"
-	});
-
-	gs.Stick=µ.Class({
-		constructor:function(xAxis=new SC.Axis(),yAxis=new SC.Axis())
-		{
-			this.xAxis=xAxis;
-			this.yAxis=yAxis;
-		},
-		setValue(valueX,valueY)
-		{
-			let rtn=this.xAxis.setValue(valueX);
-			rtn|=this.yAxis.setValue(valueY);
-			return rtn;
-		},
-		getState()
-		{
-			return {
-				x:this.xAxis.value,
-				y:this.yAxis.value
-			};
-		},
-		toJSON()
-		{
-			return {
-				xAxis:this.xAxis,
-				yAxis:this.yAxis
-			};
-		}
-	});
-
-	gs.Stick.fromJSON=function(json)
-	{
-		return new gs.Stick({
-			xAxis:new SC.Acis(json.xAxis),
-			yAxis:new SC.Acis(json.yAxis)
-		});
-	};
-
-	SMOD("gs.Stick",gs.Stick);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -793,7 +1054,7 @@
 		},
 		associateButton(key,index)
 		{
-			if(index in this.buttons)
+			if(!(index in this.buttons))
 			{
 				this.buttons[index]=new SC.Button();
 			}
@@ -804,7 +1065,7 @@
 		},
 		associateAxis(key,index,negative)
 		{
-			if(index in this.axes)
+			if(!(index in this.axes))
 			{
 				this.axes[index]=new SC.Axis();
 			}
@@ -822,7 +1083,7 @@
 		 */
 		associateStick(key,index,axis,negative)
 		{
-			if(index in this.sticks)
+			if(!(index in this.sticks))
 			{
 				this.sticks[index]=new SC.Stick();
 			}
@@ -913,6 +1174,144 @@
 	};
 
 	SMOD("gs.Controller.Keyboard",Controller.Keyboard);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let Controller=GMOD("gs.Controller");
+
+	SC=SC({
+		Button:"gs.Button",
+		Axis:"gs.Axis",
+		Stick:"gs.Stick"
+	});
+
+	Controller.Gamepad=µ.Class(Controller,{
+		constructor:function(gamepad,param={})
+		{
+			delete param.sticks // don't adopt sticks, because they are generated from associations to axes
+			this.mega(param);
+			this.gamepad=gamepad;
+
+			this.mappings={
+				buttons:{},
+				axes:{},
+				sticks:{}
+			};
+			for(let i=0;i<this.gamepad.buttons.length;i++)
+			{
+				// generate missing buttons
+				if(this.buttons.length===i) this.buttons[i]=new SC.Button();;
+				this.mappings.buttons[i]=i;
+			}
+			for(let i=0;i<this.gamepad.axes.length;i++)
+			{
+				// generate missing axes
+				if(this.axes.length===i) this.axes[i]=new SC.Axis();
+				this.mappings.axes[i]=i;
+			}
+
+			if(param.mappings) this.associate(param.mappings);
+
+		},
+		associate({buttons={},axes={},sticks={}})
+		{
+			for(let key in buttons)
+			{
+				this.associateButton(key,buttons[key]);
+			}
+
+			for(let key in axes)
+			{
+				let settings=axes[key];
+				this.associateAxis(key,settings.index,settings.negative);
+			}
+
+			for(let key in sticks)
+			{
+				let settings=sticks[key];
+				this.associateStick(key,settings.index,settings.axis,settings.negative);
+			}
+		},
+		/**
+		 * @param {Number} fromIndex
+		 * @param {Number} toIndex - null means ignore button
+		 */
+		associateButton(fromIndex,toIndex)
+		{
+			this.mapping.buttons[fromIndex]=toIndex;
+		},
+		/**
+		 * @param {Number} fromIndex
+		 * @param {Number} toIndex - null means ignore axis
+		 */
+		associateAxis(fromIndex,toIndex)
+		{
+			this.mapping.axes[fromIndex]=toIndex;
+		},
+		/**
+		 * @param {Number} axisIndex
+		 * @param {Number} stickIndex
+		 * @param {String} direction - "x" or "y"
+		 */
+		associateStick(axisIndex,stickIndex,direction)
+		{
+			this.mapping.sticks[axisIndex]={
+				index:stickIndex,
+				direction:direction
+			};
+
+			if(!(stickIndex in this.sticks))
+			{
+				this.sticks[stickIndex]=new SC.Stick();
+			}
+			if(direction==="x") this.sticks[stickIndex].setXAxis(this.axes[axisIndex]);
+			else this.sticks[stickIndex].setYAxis(this.axes[axisIndex]);
+
+			// remove axis mapping
+			delete this.mapping.axes[axisIndex];
+		},
+		update()
+		{
+			let gamepad=navigator.getGamepads()[this.gamepad.index];
+			if(this.gamepad.timestamp!=gamepad.timestamp)
+			{
+				this.gamepad=gamepad;
+
+				for(let i=0;i<=gamepad.buttons.length;i++)
+				{
+					let buttonIndex=this.mappings.buttons[i];
+					if(buttonIndex!=null) this.buttons[buttonIndex].setValue(gamepad.buttons[i].value);
+				}
+
+				for(let i=0;i<=gamepad.axes.length;i++)
+				{
+					let stickMapping=this.mappings.sticks
+					if(stickMapping)
+					{
+						let valueX=null;
+						let valueY=null;
+						if(stickMapping.direction==="x") valueX=gamepad.axes[i];
+						else valueY=gamepad.axes[i];
+						return this.setStick(stickMapping.index,valueX,valueY);
+					}
+					else
+					{
+						let axisIndex=this.mappings.axes[i];
+						if(axisIndex!=null) this.axes[axisIndex].setValue(gamepad.axes[i]);
+					}
+				}
+			}
+		},
+		toJSON()
+		{
+			let json=this.mega();
+			json.mappings=this.mappings;
+		}
+	});
+
+	SMOD("gs.Controller.Gamepad",Controller.Gamepad);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/

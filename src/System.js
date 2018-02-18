@@ -9,7 +9,7 @@
 	gs.System=µ.Class({
 		constructor:function()
 		{
-			SC.rs.all(this,["pauseListener","keyListener"]);
+			SC.rs.all(this,["pauseListener","keyListener","doPoll"]);
 
 			this.controllers=new Set();
 			this.pause=true;
@@ -25,15 +25,27 @@
 
 			this.domElement.addEventListener("keydown",this.keyListener,false);
 			this.domElement.addEventListener("keyup",this.keyListener,false);
+
+			this.poll=null;
+
 		},
 		OLD_SAVE_COUNT:3, //0 => keep all saves; should NEVER be negative
 		pauseListener(event)
 		{
-			this.pause=(event.type==="focusout"||event.target!==this.domElement);
+			this.pause=(event.type==="focusout");
 			this.domElement.classList.toggle("pause",this.pause);
 			if(this.game!=null)
 			{
 				this.game.setPause(this.pause);
+			}
+			if(this.pause)
+			{
+				cancelAnimationFrame(this.poll);
+				this.poll=null;
+			}
+			else if (this.shouldPoll())
+			{
+				this.doPoll();
 			}
 		},
 		keyListener(event)
@@ -54,6 +66,34 @@
 					event.preventDefault();
 				}
 			}
+		},
+		shouldPoll()
+		{
+			if(this.poll!==null) return false;
+
+			if(HMOD("gs.Controller.Gamepad"))
+			{
+				let Gamepad=GMOD("gs.Controller.Gamepad");
+				for(let controller of this.controllers)
+				{
+					if(controller instanceof Gamepad) return true;
+				}
+			}
+
+			return false;
+		},
+		doPoll()
+		{
+			//TODO hold list of gamepads?
+			if(HMOD("gs.Controller.Gamepad"))
+			{
+				let Gamepad=GMOD("gs.Controller.Gamepad");
+				for(let controller of this.controllers)
+				{
+					if(controller instanceof Gamepad) controller.update();
+				}
+			}
+			this.poll=requestAnimationFrame(this.doPoll);
 		},
 		appendTo(element)
 		{

@@ -1,0 +1,52 @@
+@import (once) "Game";
+.Game.SystemSettings {
+	background-color:white;
+
+	.actions {
+		display:flex;
+		flex-direction:column;
+	}
+	@border-width:4px;
+	.controllerConfig {
+		.menu {
+			box-sizing:border-box;
+			& > *, .addController [data-action] {
+				cursor:pointer;
+				padding:@border-width*2;
+				&:hover {
+					border:@border-width solid;
+					padding:@border-width;
+				}
+			}
+			display:flex;
+			.addController {
+				position:relative;
+				& > div {
+					background-color:white;
+					position:absolute;
+					top:100%;
+					left:100%;
+					display:none;
+					box-shadow: .25ex .25ex 1ex black;
+				}
+				&:hover > div {
+					top:calc(~"100% +" @border-width);
+					left:calc(~"100% +" @border-width);
+					padding:0;
+				}
+				&:focus > div {
+					display:block;
+				}
+			}
+		}
+		.list {
+			display:table;
+			label {
+				display:table-row;
+				& > * {
+					display:table-cell;
+				}
+			}
+		}
+	}
+}

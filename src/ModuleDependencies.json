@@ -11,6 +11,16 @@
 		"deps": [],
 		"uses": []
 	},
+	"gs.Controller.Gamepad": {
+		"deps": [
+			"gs.Controller"
+		],
+		"uses": [
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick"
+		]
+	},
 	"gs.Controller": {
 		"deps": [
 			"Event"
@@ -53,6 +63,15 @@
 		],
 		"uses": [
 			"rescope"
+		]
+	},
+	"gs.Game.SystemSettings": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope",
+			"gs.Game.ControllerConfig"
 		]
 	},
 	"gs.GameSave": {
