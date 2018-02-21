@@ -96,7 +96,7 @@
 		update()
 		{
 			let gamepad=navigator.getGamepads()[this.gamepad.index];
-			if(this.gamepad.timestamp!=gamepad.timestamp)
+			if(gamepad&&this.gamepad.timestamp!=gamepad.timestamp)
 			{
 				this.gamepad=gamepad;
 
@@ -108,7 +108,7 @@
 
 				for(let i=0;i<=gamepad.axes.length;i++)
 				{
-					let stickMapping=this.mappings.sticks
+					let stickMapping=this.mappings.sticks[i];
 					if(stickMapping)
 					{
 						let valueX=null;

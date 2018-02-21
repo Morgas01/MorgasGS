@@ -27,7 +27,7 @@ let keyboardController=new µ.gs.Controller.Keyboard({
 			"KeyG":2,
 			"KeyH":3,
 			"KeyQ":4,
-			"KeyE:5
+			"KeyE":5
 		},
 	}
 });
@@ -45,3 +45,6 @@ document.getElementById("goBtn").addEventListener("click",function()
 	}
 	system.setGame(new gameClass());
 },false);
+
+system.setGame(new µ.gs.Game.SystemSettings());
+system.domElement.focus();

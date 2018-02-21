@@ -19,31 +19,34 @@
   padding: 0;
   background-color: black;
 }
-.Game.SystemSettings {
+.SystemSettings {
   background-color: white;
 }
-.Game.SystemSettings .actions {
+.SystemSettings .actions {
   display: flex;
   flex-direction: column;
 }
-.Game.SystemSettings .controllerConfig .menu {
-  box-sizing: border-box;
+.ControllerConfig {
+  background-color: white;
+}
+.ControllerConfig .menu {
   display: flex;
 }
-.Game.SystemSettings .controllerConfig .menu > *,
-.Game.SystemSettings .controllerConfig .menu .addController [data-action] {
+.ControllerConfig .menu > *,
+.ControllerConfig .menu .addController [data-action] {
   cursor: pointer;
   padding: 8px;
 }
-.Game.SystemSettings .controllerConfig .menu > *:hover,
-.Game.SystemSettings .controllerConfig .menu .addController [data-action]:hover {
+.ControllerConfig .menu > *:hover,
+.ControllerConfig .menu .addController [data-action]:hover {
   border: 4px solid;
   padding: 4px;
 }
-.Game.SystemSettings .controllerConfig .menu .addController {
+.ControllerConfig .menu .addController {
   position: relative;
+  outline: 0;
 }
-.Game.SystemSettings .controllerConfig .menu .addController > div {
+.ControllerConfig .menu .addController > div {
   background-color: white;
   position: absolute;
   top: 100%;
@@ -51,22 +54,47 @@
   display: none;
   box-shadow: .25ex .25ex 1ex black;
 }
-.Game.SystemSettings .controllerConfig .menu .addController:hover > div {
+.ControllerConfig .menu .addController:hover > div {
   top: calc(100% + 4px);
   left: calc(100% + 4px);
   padding: 0;
 }
-.Game.SystemSettings .controllerConfig .menu .addController:focus > div {
+.ControllerConfig .menu .addController:focus > div {
   display: block;
 }
-.Game.SystemSettings .controllerConfig .list {
+.ControllerConfig .list {
   display: table;
 }
-.Game.SystemSettings .controllerConfig .list label {
+.ControllerConfig .list label {
   display: table-row;
 }
-.Game.SystemSettings .controllerConfig .list label > * {
+.ControllerConfig .list label > * {
   display: table-cell;
+}
+.ControllerConfig.block {
+  pointer-events: none;
+}
+.ControllerConfig.block::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+.ControllerConfig .selectGamepad {
+  background-color: white;
+  z-index: 1;
+  pointer-events: all;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1em;
+  border: 1px solid;
+  border-radius: 1em;
+  box-shadow: .5ex .5ex 1ex black;
 }
 .Component.List {
   display: grid;

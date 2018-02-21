@@ -11,6 +11,8 @@
 		{
 			SC.rs.all(this,["pauseListener","keyListener","doPoll"]);
 
+			this.pauseTimer=null;
+
 			this.controllers=new Set();
 			this.pause=true;
 			this.game=null;
@@ -32,21 +34,28 @@
 		OLD_SAVE_COUNT:3, //0 => keep all saves; should NEVER be negative
 		pauseListener(event)
 		{
-			this.pause=(event.type==="focusout");
-			this.domElement.classList.toggle("pause",this.pause);
-			if(this.game!=null)
+			clearTimeout(this.pauseTimer);
+			let pause=(event.type==="focusout");
+			this.pauseTimer=setTimeout(()=>
 			{
-				this.game.setPause(this.pause);
-			}
-			if(this.pause)
-			{
-				cancelAnimationFrame(this.poll);
-				this.poll=null;
-			}
-			else if (this.shouldPoll())
-			{
-				this.doPoll();
-			}
+				if(this.pause===pause) return;
+
+				this.pause=pause;
+				this.domElement.classList.toggle("pause",this.pause);
+				if(this.game!=null)
+				{
+					this.game.setPause(this.pause);
+				}
+				if(this.pause)
+				{
+					cancelAnimationFrame(this.poll);
+					this.poll=null;
+				}
+				else if (this.shouldPoll())
+				{
+					this.doPoll();
+				}
+			},50);
 		},
 		keyListener(event)
 		{
@@ -87,13 +96,13 @@
 			//TODO hold list of gamepads?
 			if(HMOD("gs.Controller.Gamepad"))
 			{
+				this.poll=requestAnimationFrame(this.doPoll);
 				let Gamepad=GMOD("gs.Controller.Gamepad");
 				for(let controller of this.controllers)
 				{
 					if(controller instanceof Gamepad) controller.update();
 				}
 			}
-			this.poll=requestAnimationFrame(this.doPoll);
 		},
 		appendTo(element)
 		{

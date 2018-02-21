@@ -44,6 +44,16 @@
 			"gs.Stick"
 		]
 	},
+	"gs.Game.ControllerConfig": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope",
+			"gs.Controller.Keyboard",
+			"gs.Controller.Gamepad"
+		]
+	},
 	"gs.Game.Embedded": {
 		"deps": [
 			"gs.Game"

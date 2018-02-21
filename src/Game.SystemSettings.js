@@ -9,12 +9,11 @@
 
 	Game.SystemSettings=µ.Class(Game,{
 		name:"SystemSettings",
-		constructor:function(callback)
+		constructor:function(onExit)
 		{
 			SC.rescope.all(this,["onAction"]);
 			this.mega();
-			this.busy=null;
-			this.callback=callback;
+			this.onExit=onExit;
 			this.actionsContainer=document.createElement("DIV");
 			this.actionsContainer.classList.add("actions");
 			this.actionsContainer.innerHTML=`
@@ -26,23 +25,18 @@
 		},
 		onAction(event)
 		{
-			if(this.busy) return;
+			let system=this.system;
 			switch(event.target.dataset.action)
 			{
 				case "controllerConfig":
-					this.busy=Game.SystemSettings.controllerConfig(this);
+					system.setGame(new SC.ControllerConfig({
+						onExit:()=>system.setGame(this)
+					}));
 					break;
 				case "exit":
-					if(this.callback) this.callback();
+					if(this.onExit) this.onExit();
 					return;
 			}
-			this.actionsContainer.remove();
-			this.busy.catch(µ.logger.error)
-			.then(()=>
-			{
-				this.domElement.appendChild(this.actionsContainer);
-				this.busy=null;
-			});
 		}
 	});
 

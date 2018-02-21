@@ -11,6 +11,7 @@
 	Game.ControllerConfig=µ.Class(Game,{
 		name:"ControllerConfig",
 		constructor:function({
+			onExit=null,
 			buttons=6,
 			sticks=1,
 			axes=0
@@ -18,6 +19,8 @@
     	{
 			SC.rescope.all(this,["onAction"]);
     		this.mega();
+
+    		this.onExit=onExit;
 
     		this.templateCounts={
 				buttons:buttons,
@@ -29,14 +32,15 @@
     		this.menu.classList.add("menu");
     		this.menu.innerHTML=`
     			<div class="addController" tabindex="-1">
-    				<span>➕</span>
+    				<span title="add">➕</span>
     				<div>
-    					<div data-action="addGamepad">🎮</div>
-    					<div data-action="addKeyboard">⌨</div>
+    					<div data-action="addGamepad" title="Gamepad">🎮</div>
+    					<div data-action="addKeyboard" title="Keyboard">⌨</div>
     				</div>
     			</div>
-    			<div data-action="edit">⚙</div>
-    			<div data-action="remove">➖</div>
+    			<div data-action="edit" title="Edit">⚙</div>
+    			<div data-action="remove" title="Remove">➖</div>
+    			<div data-action="exit" title="Exit">🚪</div>
     		`;
     		this.menu.addEventListener("click",this.onAction);
     		this.domElement.appendChild(this.menu);
@@ -127,6 +131,9 @@
 					this.system.removeController(controller);
 					this.updateSystem();
 					break;
+				case "exit":
+					if(this.onExit) this.onExit();
+					return;
 			}
 		},
 		selectGamepad()
@@ -137,7 +144,7 @@
 				chooseContainer.classList.add("selectGamepad");
 
 				let gamepads;
-				let updateChoice=function()
+				let updateChoice=()=>
 				{
 					gamepads=navigator.getGamepads();
 					for(let controller of this.system.controllers)
@@ -161,17 +168,21 @@
 							<button data-action="cancel">Cancel</button>
 						</div>
 					`;
+					chooseContainer.children[0].focus();
 				};
 				window.addEventListener("gamepadconnected",updateChoice);
-				updateChoice();
 				this.domElement.appendChild(chooseContainer);
+				this.domElement.classList.add("block");
+				updateChoice();
 
-				chooseContainer.addEventListener("click",function(event)
+				chooseContainer.addEventListener("click",(event)=>
 				{
 					switch(event.target.dataset.action)
 					{
 						case "cancel":
 							window.removeEventListener("gamepadconnected",updateChoice);
+							this.domElement.classList.remove("block");
+							chooseContainer.remove();
 							reject();
 							break;
 						case "ok":
@@ -180,6 +191,8 @@
 							if(gamepad)
 							{
 								window.removeEventListener("gamepadconnected",updateChoice);
+								this.domElement.classList.remove("block");
+								chooseContainer.remove();
 								resolve(new SC.Gamepad(gamepad));
 							}
 							break;
@@ -190,15 +203,15 @@
 		getControllerTemplate()
 		{
 			let template={
-				domElement:document.createElement("DIV");
+				domElement:document.createElement("DIV"),
 				buttons:{
-					domElement:document.createElement("FIELDSET");
-				}
+					domElement:document.createElement("FIELDSET"),
+				},
 				sticks:{
-					domElement:document.createElement("FIELDSET");
-				}
+					domElement:document.createElement("FIELDSET"),
+				},
 				axes:{
-					domElement:document.createElement("FIELDSET");
+					domElement:document.createElement("FIELDSET"),
 				}
 			};
 
@@ -227,7 +240,7 @@
 			}
 
 			template.domElement.appendChild(template.axes.domElement);
-			let legend=document.createElement("LEGEND");
+			legend=document.createElement("LEGEND");
 			legend.textContent="Axes";
 			template.axes.domElement.appendChild(legend);
 			if(this.templateCounts.axes==0)
@@ -288,5 +301,7 @@
 			//TODO
 		}
 	});
+
+	SMOD("gs.Game.ControllerConfig",Game.ControllerConfig);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
