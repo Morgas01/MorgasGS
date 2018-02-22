@@ -704,6 +704,10 @@
 				axes:axes
 			};
 
+			this.main=document.createElement("DIV");
+			this.main.classList.add("main");
+			this.domElement.appendChild(this.main);
+
     		this.menu=document.createElement("DIV");
     		this.menu.classList.add("menu");
     		this.menu.innerHTML=`
@@ -719,7 +723,7 @@
     			<div data-action="exit" title="Exit">🚪</div>
     		`;
     		this.menu.addEventListener("click",this.onAction);
-    		this.domElement.appendChild(this.menu);
+    		this.main.appendChild(this.menu);
 
     		this.controllerIcons=new Map([
 				[SC.Keyboard.prototype.constructor,"⌨"],
@@ -728,18 +732,8 @@
 
     		this.list=document.createElement("DIV");
     		this.list.classList.add("list");
-    		this.domElement.appendChild(this.list);
+    		this.main.appendChild(this.list);
     		this.controllerMap=new Map();
-
-    		let okBtn=document.createElement("BUTTON");
-    		okBtn.textContent="OK";
-    		this.domElement.appendChild(okBtn);
-    		/** TODO
-			okBtn.addEventListener("click",()=>
-			{
-				fire event
-			});
-			*/
     	},
     	setPause(value)
     	{
@@ -784,8 +778,8 @@
 					controllerConfig.editKeyboard(newKeyCon);
 					break;
 				case "edit":
-					selected=list.querySelector(":checked").parentNode;
-					controller=controllerMap.get(selected);
+					selected=this.list.querySelector(":checked").parentNode;
+					controller=this.controllerMap.get(selected);
 
 					switch(controller.constructor)
 					{
@@ -802,14 +796,14 @@
 
 					break;
 				case "remove":
-					selected=list.querySelector(":checked").parentNode;
-					controller=controllerMap.get(selected);
+					selected=this.list.querySelector(":checked").parentNode;
+					controller=this.controllerMap.get(selected);
 					this.system.removeController(controller);
 					this.updateSystem();
 					break;
 				case "exit":
 					if(this.onExit) this.onExit();
-					return;
+					break;
 			}
 		},
 		selectGamepad()
@@ -891,7 +885,10 @@
 				}
 			};
 
+			template.domElement.classList.add("edit");
 			template.domElement.appendChild(template.buttons.domElement);
+
+			template.buttons.domElement.classList.add("buttons");
 			let legend=document.createElement("LEGEND");
 			legend.textContent="Buttons";
 			template.buttons.domElement.appendChild(legend);
@@ -908,13 +905,14 @@
 				template.buttons.domElement.append(buttonTemplate.domElement);
 
 				buttonTemplate.input=document.createElement("INPUT");
-				template.buttons.domElement.appendChild(buttonTemplate.input);
+				buttonTemplate.domElement.appendChild(buttonTemplate.input);
 
 				buttonTemplate.description=document.createElement("SPAN");
 				buttonTemplate.description.textContent=i;
-				template.buttons.domElement.appendChild(buttonTemplate.description);
+				buttonTemplate.domElement.appendChild(buttonTemplate.description);
 			}
 
+			template.axes.domElement.classList.add("axes");
 			template.domElement.appendChild(template.axes.domElement);
 			legend=document.createElement("LEGEND");
 			legend.textContent="Axes";
@@ -932,13 +930,14 @@
 				template.axes.domElement.append(axisTemplate.domElement);
 
 				axisTemplate.input=document.createElement("INPUT");
-				template.axes.domElement.appendChild(axisTemplate.input);
+				axisTemplate.domElement.appendChild(axisTemplate.input);
 
 				axisTemplate.description=document.createElement("SPAN");
 				axisTemplate.description.textContent=i;
-				template.axes.domElement.appendChild(axisTemplate.description);
+				axisTemplate.domElement.appendChild(axisTemplate.description);
 			}
 
+			template.sticks.domElement.classList.add("sticks");
 			template.domElement.appendChild(template.sticks.domElement);
 			legend=document.createElement("LEGEND");
 			legend.textContent="Sticks";
@@ -951,19 +950,28 @@
 			{
 				let stickTemplate=template.buttons[i]={};
 				stickTemplate.domElement=document.createElement("DIV");
-				stickTemplate.domElement.classList.add("button");
+				stickTemplate.domElement.classList.add("stick");
 				stickTemplate.domElement.dataset.index=i;
 				template.sticks.domElement.append(stickTemplate.domElement);
 
-				stickTemplate.inputX=document.createElement("INPUT");
-				template.sticks.domElement.appendChild(stickTemplate.inputX);
+				let axesWrapper=document.createElement("DIV");
+				stickTemplate.domElement.append(axesWrapper);
 
+				let descX=document.createElement("SPAN");
+				descX.textContent="X:";
+				axesWrapper.appendChild(descX);
+				stickTemplate.inputX=document.createElement("INPUT");
+				axesWrapper.appendChild(stickTemplate.inputX);
+
+				let descY=document.createElement("SPAN");
+				descY.textContent="Y:";
+				axesWrapper.appendChild(descY);
 				stickTemplate.inputY=document.createElement("INPUT");
-				template.sticks.domElement.appendChild(stickTemplate.inputY);
+				axesWrapper.appendChild(stickTemplate.inputY);
 
 				stickTemplate.description=document.createElement("SPAN");
 				stickTemplate.description.textContent=i;
-				template.sticks.domElement.appendChild(stickTemplate.description);
+				stickTemplate.domElement.appendChild(stickTemplate.description);
 			}
 
 			return template;
@@ -974,7 +982,20 @@
 		},
 		editGamepad(controller)
 		{
-			//TODO
+			let template=this.getControllerTemplate();
+			this.domElement.removeChild(this.main);
+			this.domElement.appendChild(template.domElement);
+
+    		let okBtn=document.createElement("BUTTON");
+    		okBtn.textContent="OK";
+    		template.domElement.appendChild(okBtn);
+
+			okBtn.addEventListener("click",()=>
+			{
+				this.domElement.removeChild(template.domElement);
+				this.updateSystem();
+				this.domElement.appendChild(this.main);
+			});
 		}
 	});
 

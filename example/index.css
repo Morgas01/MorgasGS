@@ -42,7 +42,7 @@ body > * {
 	display:flex;
 	align-items:center;
 }
-.stick {
+#legend .stick {
 	height:50px;
 	width:50px;
 	position:relative;

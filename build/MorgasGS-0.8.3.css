@@ -29,24 +29,24 @@
 .ControllerConfig {
   background-color: white;
 }
-.ControllerConfig .menu {
+.ControllerConfig .main .menu {
   display: flex;
 }
-.ControllerConfig .menu > *,
-.ControllerConfig .menu .addController [data-action] {
+.ControllerConfig .main .menu > *,
+.ControllerConfig .main .menu .addController [data-action] {
   cursor: pointer;
   padding: 8px;
 }
-.ControllerConfig .menu > *:hover,
-.ControllerConfig .menu .addController [data-action]:hover {
+.ControllerConfig .main .menu > *:hover,
+.ControllerConfig .main .menu .addController [data-action]:hover {
   border: 4px solid;
   padding: 4px;
 }
-.ControllerConfig .menu .addController {
+.ControllerConfig .main .menu .addController {
   position: relative;
   outline: 0;
 }
-.ControllerConfig .menu .addController > div {
+.ControllerConfig .main .menu .addController > div {
   background-color: white;
   position: absolute;
   top: 100%;
@@ -54,21 +54,21 @@
   display: none;
   box-shadow: .25ex .25ex 1ex black;
 }
-.ControllerConfig .menu .addController:hover > div {
+.ControllerConfig .main .menu .addController:hover > div {
   top: calc(100% + 4px);
   left: calc(100% + 4px);
   padding: 0;
 }
-.ControllerConfig .menu .addController:focus > div {
+.ControllerConfig .main .menu .addController:focus > div {
   display: block;
 }
-.ControllerConfig .list {
+.ControllerConfig .main .list {
   display: table;
 }
-.ControllerConfig .list label {
+.ControllerConfig .main .list label {
   display: table-row;
 }
-.ControllerConfig .list label > * {
+.ControllerConfig .main .list label > * {
   display: table-cell;
 }
 .ControllerConfig.block {
@@ -95,6 +95,35 @@
   border: 1px solid;
   border-radius: 1em;
   box-shadow: .5ex .5ex 1ex black;
+}
+.ControllerConfig .edit {
+  display: flex;
+  flex-flow: row wrap;
+}
+.ControllerConfig .edit .buttons,
+.ControllerConfig .edit .axes,
+.ControllerConfig .edit .sticks {
+  flex: 1 1 0;
+  display: flex;
+  justify-content: space-around;
+}
+.ControllerConfig .edit .buttons > div,
+.ControllerConfig .edit .axes > div,
+.ControllerConfig .edit .sticks > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ControllerConfig .edit .buttons > div input,
+.ControllerConfig .edit .axes > div input,
+.ControllerConfig .edit .sticks > div input {
+  width: 2em;
+}
+.ControllerConfig .edit .empty {
+  display: none;
+}
+.ControllerConfig .edit button {
+  flex-basis: 100%;
 }
 .Component.List {
   display: grid;

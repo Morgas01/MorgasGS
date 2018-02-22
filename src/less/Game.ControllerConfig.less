@@ -4,47 +4,49 @@
 
 	background-color:white;
 
-	.menu {
-		@border-width:4px;
+	.main {
+		.menu {
+			@border-width:4px;
 
-		display:flex;
+			display:flex;
 
-		& > *, .addController [data-action] {
-			cursor:pointer;
-			padding:@border-width*2;
-			&:hover {
-				border:@border-width solid;
-				padding:@border-width;
+			& > *, .addController [data-action] {
+				cursor:pointer;
+				padding:@border-width*2;
+				&:hover {
+					border:@border-width solid;
+					padding:@border-width;
+				}
+			}
+
+			.addController {
+				position:relative;
+				outline:0;
+				& > div {
+					background-color:white;
+					position:absolute;
+					top:100%;
+					left:100%;
+					display:none;
+					box-shadow: .25ex .25ex 1ex black;
+				}
+				&:hover > div {
+					top:calc(~"100% +" @border-width);
+					left:calc(~"100% +" @border-width);
+					padding:0;
+				}
+				&:focus > div {
+					display:block;
+				}
 			}
 		}
-
-		.addController {
-			position:relative;
-			outline:0;
-			& > div {
-				background-color:white;
-				position:absolute;
-				top:100%;
-				left:100%;
-				display:none;
-				box-shadow: .25ex .25ex 1ex black;
-			}
-			&:hover > div {
-				top:calc(~"100% +" @border-width);
-				left:calc(~"100% +" @border-width);
-				padding:0;
-			}
-			&:focus > div {
-				display:block;
-			}
-		}
-	}
-	.list {
-		display:table;
-		label {
-			display:table-row;
-			& > * {
-				display:table-cell;
+		.list {
+			display:table;
+			label {
+				display:table-row;
+				& > * {
+					display:table-cell;
+				}
 			}
 		}
 	}
@@ -73,5 +75,31 @@
 		border: 1px solid;
 		border-radius: 1em;
 		box-shadow: .5ex .5ex 1ex black;
+	}
+
+	.edit {
+		display:flex;
+		flex-flow: row wrap;
+
+		.buttons, .axes, .sticks {
+			flex: 1 1 0;
+			display:flex;
+			justify-content:space-around;
+			> div {
+				display:flex;
+				flex-direction:column;
+				align-items:center;
+				input {
+					width:2em;
+				}
+			}
+		}
+		.empty {
+			display:none;
+		}
+
+		button {
+			flex-basis:100%;
+		}
 	}
 }
