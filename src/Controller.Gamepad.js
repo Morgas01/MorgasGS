@@ -14,6 +14,7 @@
 			delete param.sticks // don't adopt sticks, because they are generated from associations to axes
 			this.mega(param);
 			this.gamepad=gamepad;
+			this.timestamp=gamepad.timestamp;
 
 			this.mappings={
 				buttons:{},
@@ -61,7 +62,7 @@
 		 */
 		associateButton(fromIndex,toIndex)
 		{
-			this.mapping.buttons[fromIndex]=toIndex;
+			this.mappings.buttons[fromIndex]=toIndex;
 		},
 		/**
 		 * @param {Number} fromIndex
@@ -69,7 +70,7 @@
 		 */
 		associateAxis(fromIndex,toIndex)
 		{
-			this.mapping.axes[fromIndex]=toIndex;
+			this.mappings.axes[fromIndex]=toIndex;
 		},
 		/**
 		 * @param {Number} axisIndex
@@ -78,7 +79,7 @@
 		 */
 		associateStick(axisIndex,stickIndex,direction)
 		{
-			this.mapping.sticks[axisIndex]={
+			this.mappings.sticks[axisIndex]={
 				index:stickIndex,
 				direction:direction
 			};
@@ -91,19 +92,21 @@
 			else this.sticks[stickIndex].setYAxis(this.axes[axisIndex]);
 
 			// remove axis mapping
-			delete this.mapping.axes[axisIndex];
+			delete this.mappings.axes[axisIndex];
 		},
 		update()
 		{
+			//let gamepad=navigator.getGamepads().find(g=>g&&g.id==this.gamepad.id);
 			let gamepad=navigator.getGamepads()[this.gamepad.index];
-			if(gamepad&&this.gamepad.timestamp!=gamepad.timestamp)
+			if(gamepad&&this.timestamp!=gamepad.timestamp)
 			{
 				this.gamepad=gamepad;
+				this.timestamp=gamepad.timestamp;
 
 				for(let i=0;i<=gamepad.buttons.length;i++)
 				{
 					let buttonIndex=this.mappings.buttons[i];
-					if(buttonIndex!=null) this.buttons[buttonIndex].setValue(gamepad.buttons[i].value);
+					if(buttonIndex!=null) this.setButton(buttonIndex,gamepad.buttons[i].value*100);
 				}
 
 				for(let i=0;i<=gamepad.axes.length;i++)
@@ -113,14 +116,14 @@
 					{
 						let valueX=null;
 						let valueY=null;
-						if(stickMapping.direction==="x") valueX=gamepad.axes[i];
-						else valueY=gamepad.axes[i];
+						if(stickMapping.direction==="x") valueX=gamepad.axes[i]*100;
+						else valueY=gamepad.axes[i]*100;
 						return this.setStick(stickMapping.index,valueX,valueY);
 					}
 					else
 					{
 						let axisIndex=this.mappings.axes[i];
-						if(axisIndex!=null) this.axes[axisIndex].setValue(gamepad.axes[i]);
+						if(axisIndex!=null) this.setAxis(axisIndex,gamepad.axes[i]*100);
 					}
 				}
 			}

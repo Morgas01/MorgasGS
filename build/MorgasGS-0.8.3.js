@@ -46,15 +46,7 @@
 				{
 					this.game.setPause(this.pause);
 				}
-				if(this.pause)
-				{
-					cancelAnimationFrame(this.poll);
-					this.poll=null;
-				}
-				else if (this.shouldPoll())
-				{
-					this.doPoll();
-				}
+				this.updatePoll(this.pause?null:false);
 			},50);
 		},
 		keyListener(event)
@@ -74,6 +66,22 @@
 				{
 					event.preventDefault();
 				}
+			}
+		},
+		updatePoll(force)
+		{
+			let check=force===true?true:force===false?false:this.shouldPoll();
+			if (check)
+			{
+				clearInterval(this.poll);
+				this.poll=setInterval(this.doPoll,1000);
+				//this.doPoll();
+			}
+			else
+			{
+				clearInterval(this.poll);
+				//cancelAnimationFrame(this.poll);
+				this.poll=null;
 			}
 		},
 		shouldPoll()
@@ -96,7 +104,7 @@
 			//TODO hold list of gamepads?
 			if(HMOD("gs.Controller.Gamepad"))
 			{
-				this.poll=requestAnimationFrame(this.doPoll);
+				//this.poll=requestAnimationFrame(this.doPoll);
 				let Gamepad=GMOD("gs.Controller.Gamepad");
 				for(let controller of this.controllers)
 				{
@@ -117,6 +125,7 @@
 		{
 			this.controllers.add(controller);
 			controller.addEventListener("controllerChange",this,this.propagateControllerChange)
+			this.updatePoll();
 			return this;
 		},
 		propagateControllerChange(event)
@@ -134,6 +143,7 @@
 		{
 			this.controllers.delete(controller);
 			controller.removeEventListener("controllerChange",this);
+			this.updatePoll();
 			return this;
 		},
 		setGame(game)
@@ -718,7 +728,8 @@
     					<div data-action="addKeyboard" title="Keyboard">⌨</div>
     				</div>
     			</div>
-    			<div data-action="edit" title="Edit">⚙</div>
+    			<div data-action="mapping" title="Mapping">⚙</div>
+    			<div data-action="setting" title="Setting">🔧</div>
     			<div data-action="remove" title="Remove">➖</div>
     			<div data-action="exit" title="Exit">🚪</div>
     		`;
@@ -777,22 +788,31 @@
 					this.system.addController(newKeyCon);
 					controllerConfig.editKeyboard(newKeyCon);
 					break;
-				case "edit":
+				case "mapping":
 					selected=this.list.querySelector(":checked").parentNode;
 					controller=this.controllerMap.get(selected);
+					if(!controller) return ;
 
 					switch(controller.constructor)
 					{
 						case SC.Keyboard.prototype.constructor:
-							this.editKeyboard(controller);
+							this.mapKeyboard(controller);
 							break;
 						case SC.Gamepad.prototype.constructor:
-							this.editGamepad(controller);
+							this.mapGamepad(controller);
 							break;
 						default:
 							µ.logger.error("#ControllerConfig:001 unknown controller class")
 							//TODO
 					}
+
+					break;
+				case "setting":
+					selected=this.list.querySelector(":checked").parentNode;
+					controller=this.controllerMap.get(selected);
+					if(!controller) return ;
+
+					this.setting(controller);
 
 					break;
 				case "remove":
@@ -870,7 +890,7 @@
 				});
 			});
 		},
-		getControllerTemplate()
+		getMappingTemplate()
 		{
 			let template={
 				domElement:document.createElement("DIV"),
@@ -900,7 +920,7 @@
 			{
 				let buttonTemplate=template.buttons[i]={};
 				buttonTemplate.domElement=document.createElement("DIV");
-				buttonTemplate.domElement.classList.add("button");
+				buttonTemplate.domElement.dataset.type="button";
 				buttonTemplate.domElement.dataset.index=i;
 				template.buttons.domElement.append(buttonTemplate.domElement);
 
@@ -925,7 +945,7 @@
 			{
 				let axisTemplate=template.axes[i]={};
 				axisTemplate.domElement=document.createElement("DIV");
-				axisTemplate.domElement.classList.add("axis");
+				axisTemplate.domElement.dataset.type="axis";
 				axisTemplate.domElement.dataset.index=i;
 				template.axes.domElement.append(axisTemplate.domElement);
 
@@ -950,7 +970,7 @@
 			{
 				let stickTemplate=template.buttons[i]={};
 				stickTemplate.domElement=document.createElement("DIV");
-				stickTemplate.domElement.classList.add("stick");
+				stickTemplate.domElement.dataset.type="stick";
 				stickTemplate.domElement.dataset.index=i;
 				template.sticks.domElement.append(stickTemplate.domElement);
 
@@ -961,12 +981,14 @@
 				descX.textContent="X:";
 				axesWrapper.appendChild(descX);
 				stickTemplate.inputX=document.createElement("INPUT");
+				stickTemplate.inputX.dataset.axis="x";
 				axesWrapper.appendChild(stickTemplate.inputX);
 
 				let descY=document.createElement("SPAN");
 				descY.textContent="Y:";
 				axesWrapper.appendChild(descY);
 				stickTemplate.inputY=document.createElement("INPUT");
+				stickTemplate.inputY.dataset.axis="y";
 				axesWrapper.appendChild(stickTemplate.inputY);
 
 				stickTemplate.description=document.createElement("SPAN");
@@ -974,28 +996,137 @@
 				stickTemplate.domElement.appendChild(stickTemplate.description);
 			}
 
+    		template.okBtn=document.createElement("BUTTON");
+    		template.okBtn.classList.add("okButton");
+    		template.okBtn.textContent="OK";
+    		template.domElement.appendChild(template.okBtn);
+
 			return template;
 		},
-		editKeyboard(controller)
+		mapKeyboard(controller)
 		{
-			//TODO
-		},
-		editGamepad(controller)
-		{
-			let template=this.getControllerTemplate();
+			let template=this.getMappingTemplate();
 			this.domElement.removeChild(this.main);
 			this.domElement.appendChild(template.domElement);
 
-    		let okBtn=document.createElement("BUTTON");
-    		okBtn.textContent="OK";
-    		template.domElement.appendChild(okBtn);
-
-			okBtn.addEventListener("click",()=>
+			template.domElement.addEventListener("keydown",function(event)
 			{
+				//TODO ignore tab,meta and F1-N keys
+				console.log(event.code);
+				let target=template.domElement.querySelector(":focus");
+				if(target&&target.tagName==="INPUT")
+				{
+					event.preventDefault();
+					let item=this.getItem(target);
+					if(item)
+					{
+						switch(item.dataset.type)
+						{
+							case "button":
+									target.value=event.code;
+									controller.associateButton(event.code,item.dataset.index);
+							case "axis":
+									target.value=event.code;
+									//TODO negative
+									controller.associateButton(event.code,item.dataset.index);
+								break;
+							case "stick":
+									target.value=event.code;
+									//TODO negative
+									controller.associateStick(event.code,item.dataset.index,target.dataset.axis);
+								break;
+							default:
+								µ.logger.error("#ControllerConfig:004 unexpected item type");
+						}
+					}
+				}
+			});
+
+			let inspectInterval=setInterval(()=>inspectController.update(),100);
+			template.okBtn.addEventListener("click",()=>
+			{
+				clearInterval(inspectInterval);
+				inspectController.removeEventListener("controllerChange",this);
+				inspectController.destroy();
 				this.domElement.removeChild(template.domElement);
 				this.updateSystem();
 				this.domElement.appendChild(this.main);
 			});
+		},
+		mapGamepad(controller)
+		{
+			let inspectController=new SC.Gamepad(controller.gamepad);
+			let template=this.getMappingTemplate();
+			this.domElement.removeChild(this.main);
+			this.domElement.appendChild(template.domElement);
+
+			inspectController.addEventListener("controllerChange",this,function(event)
+			{
+				if(
+					((event.type==="button"||event.type==="axis")&&Math.abs(event.value.value)<25) ||
+					(event.type==="stick"&&(Math.abs(event.value.x)<25||Math.abs(event.value.y)<25))
+				)
+				{
+					return;
+				}
+				let target=template.domElement.querySelector(":focus");
+				if(target&&target.tagName==="INPUT")
+				{
+					let item=this.getItem(target);
+					if(item)
+					{
+						switch(event.type)
+						{
+							case "button":
+								if(item.dataset.type=="button")
+								{
+									target.value=event.index;
+									controller.associateButton(event.index,item.dataset.index);
+								}
+								break;
+							case "axis":
+								if(item.dataset.type=="axis")
+								{
+									target.value=event.index;
+									controller.associateAxis(event.index,item.dataset.index);
+								}
+								else if(item.dataset.type=="stick")
+								{
+									target.value=event.index;
+									controller.associateStick(event.index,item.dataset.index,target.dataset.axis);
+								}
+								break;
+							default:
+								µ.logger.error("#ControllerConfig:003 unexpected controllerEvent type");
+						}
+					}
+				}
+			});
+
+			let inspectInterval=setInterval(()=>inspectController.update(),100);
+			template.okBtn.addEventListener("click",()=>
+			{
+				clearInterval(inspectInterval);
+				inspectController.removeEventListener("controllerChange",this);
+				inspectController.destroy();
+				this.domElement.removeChild(template.domElement);
+				this.updateSystem();
+				this.domElement.appendChild(this.main);
+			});
+		},
+		getItem(item)
+		{
+			while(item&&!item.dataset.type) item=item.parentNode;
+			if(!item)
+			{
+				µ.logger.error("#ControllerConfig:002 item not found");
+				return null;
+			}
+			return item;
+		},
+		setting(controller)
+		{
+			//TODO
 		}
 	});
 
@@ -1364,6 +1495,7 @@
 			delete param.sticks // don't adopt sticks, because they are generated from associations to axes
 			this.mega(param);
 			this.gamepad=gamepad;
+			this.timestamp=gamepad.timestamp;
 
 			this.mappings={
 				buttons:{},
@@ -1411,7 +1543,7 @@
 		 */
 		associateButton(fromIndex,toIndex)
 		{
-			this.mapping.buttons[fromIndex]=toIndex;
+			this.mappings.buttons[fromIndex]=toIndex;
 		},
 		/**
 		 * @param {Number} fromIndex
@@ -1419,7 +1551,7 @@
 		 */
 		associateAxis(fromIndex,toIndex)
 		{
-			this.mapping.axes[fromIndex]=toIndex;
+			this.mappings.axes[fromIndex]=toIndex;
 		},
 		/**
 		 * @param {Number} axisIndex
@@ -1428,7 +1560,7 @@
 		 */
 		associateStick(axisIndex,stickIndex,direction)
 		{
-			this.mapping.sticks[axisIndex]={
+			this.mappings.sticks[axisIndex]={
 				index:stickIndex,
 				direction:direction
 			};
@@ -1441,19 +1573,21 @@
 			else this.sticks[stickIndex].setYAxis(this.axes[axisIndex]);
 
 			// remove axis mapping
-			delete this.mapping.axes[axisIndex];
+			delete this.mappings.axes[axisIndex];
 		},
 		update()
 		{
+			//let gamepad=navigator.getGamepads().find(g=>g&&g.id==this.gamepad.id);
 			let gamepad=navigator.getGamepads()[this.gamepad.index];
-			if(gamepad&&this.gamepad.timestamp!=gamepad.timestamp)
+			if(gamepad&&this.timestamp!=gamepad.timestamp)
 			{
 				this.gamepad=gamepad;
+				this.timestamp=gamepad.timestamp;
 
 				for(let i=0;i<=gamepad.buttons.length;i++)
 				{
 					let buttonIndex=this.mappings.buttons[i];
-					if(buttonIndex!=null) this.buttons[buttonIndex].setValue(gamepad.buttons[i].value);
+					if(buttonIndex!=null) this.setButton(buttonIndex,gamepad.buttons[i].value*100);
 				}
 
 				for(let i=0;i<=gamepad.axes.length;i++)
@@ -1463,14 +1597,14 @@
 					{
 						let valueX=null;
 						let valueY=null;
-						if(stickMapping.direction==="x") valueX=gamepad.axes[i];
-						else valueY=gamepad.axes[i];
+						if(stickMapping.direction==="x") valueX=gamepad.axes[i]*100;
+						else valueY=gamepad.axes[i]*100;
 						return this.setStick(stickMapping.index,valueX,valueY);
 					}
 					else
 					{
 						let axisIndex=this.mappings.axes[i];
-						if(axisIndex!=null) this.axes[axisIndex].setValue(gamepad.axes[i]);
+						if(axisIndex!=null) this.setAxis(axisIndex,gamepad.axes[i]*100);
 					}
 				}
 			}

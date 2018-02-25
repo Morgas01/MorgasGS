@@ -107,22 +107,22 @@
   display: flex;
   justify-content: space-around;
 }
-.ControllerConfig .edit .buttons > div,
-.ControllerConfig .edit .axes > div,
-.ControllerConfig .edit .sticks > div {
+.ControllerConfig .edit .buttons [data-type],
+.ControllerConfig .edit .axes [data-type],
+.ControllerConfig .edit .sticks [data-type] {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.ControllerConfig .edit .buttons > div input,
-.ControllerConfig .edit .axes > div input,
-.ControllerConfig .edit .sticks > div input {
+.ControllerConfig .edit .buttons [data-type] input,
+.ControllerConfig .edit .axes [data-type] input,
+.ControllerConfig .edit .sticks [data-type] input {
   width: 2em;
 }
 .ControllerConfig .edit .empty {
   display: none;
 }
-.ControllerConfig .edit button {
+.ControllerConfig .edit .okButton {
   flex-basis: 100%;
 }
 .Component.List {

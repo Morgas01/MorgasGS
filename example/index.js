@@ -45,6 +45,3 @@ document.getElementById("goBtn").addEventListener("click",function()
 	}
 	system.setGame(new gameClass());
 },false);
-
-system.setGame(new µ.gs.Game.SystemSettings());
-system.domElement.focus();
