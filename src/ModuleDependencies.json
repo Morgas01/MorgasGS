@@ -54,7 +54,7 @@
 			"gs.Controller.Gamepad"
 		]
 	},
-	"gs.Game.Embedded": {
+	"gs.Game.Embed": {
 		"deps": [
 			"gs.Game"
 		],

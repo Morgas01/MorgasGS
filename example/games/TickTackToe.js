@@ -6,11 +6,11 @@ let valueMapper=function(element,data)
 {
 	element.textContent=playerIcons[data];
 };
-let TickTackToe=µ.Class(µ.gs.Game.Embedded,{
+let TickTackToe=µ.Class(µ.gs.Game,{
 	name:"TickTackToe",
-	constructor:function()
+	constructor:function(param)
 	{
-		this.mega();
+		this.mega(param);
 
 		this.data=[];
 		this.list=new µ.gs.Component.List(this.data,valueMapper,{columns:3});
@@ -110,4 +110,4 @@ let TickTackToe=µ.Class(µ.gs.Game.Embedded,{
 	}
 });
 
-new TickTackToe();
+µ.gs.Game.Embed(TickTackToe);

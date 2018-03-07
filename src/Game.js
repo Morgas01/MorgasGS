@@ -15,7 +15,7 @@
 			if(gameNames.has(sProt.name)) throw new RangeError("#Game:002 Game name must be unique");
 			gameNames.set(sProt.name,sub);
 		},
-		constructor:function({elementTag="DIV",domElement=document.createElement(elementTag)}={})
+		constructor:function({elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
 		{
 			this.state=null;
 			this.system=null; // set from System.setProgramm()

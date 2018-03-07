@@ -317,7 +317,7 @@
 			if(gameNames.has(sProt.name)) throw new RangeError("#Game:002 Game name must be unique");
 			gameNames.set(sProt.name,sub);
 		},
-		constructor:function({elementTag="DIV",domElement=document.createElement(elementTag)}={})
+		constructor:function({elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
 		{
 			this.state=null;
 			this.system=null; // set from System.setProgramm()
@@ -591,16 +591,30 @@
 
 	let REQUEST_COUNTER=0;
 
-	Game.Embedded=µ.Class(Game,{
-		[µ.Class.symbols.abstract]:true,
+	let EmbeddedGame=null;
+
+	Game.Embed=function(gameClass,options={})
+	{
+		let namePrefix, args;
+		({
+			namePrefix:namePrefix="embedded_",
+			args:args=[]
+		}=options);
+
+		if(EmbeddedGame) return EmbeddedGame;
+		let newProto=Object.assign({},Game.Embed.proto);
+		newProto.originalName=gameClass.prototype.name;
+		newProto.name=namePrefix+gameClass.prototype.name;
+		return EmbeddedGame=new (µ.Class(gameClass,newProto))(...args);
+	};
+	Game.Embed.proto={
 		constructor:function(param={})
 		{
 			SC.rs.all(this,["_onMessage","_onFocus"]);
 
-			param.domElement=document.body;
-
-			this.mega(param);
-			this.domElement.classList.add("Embedded");
+			this.domElement=document.body;
+			this.domElement.classList.add("Embedded",this.originalName);
+			this.mega(...arguments);
 
 			({
 				timeout:this.timeout=50000
@@ -678,9 +692,9 @@
 				this._send({type:"reclaimFocus"});
 			}
 		}
-	});
+	};
 
-	SMOD("gs.Game.Embedded",Game.Embedded);
+	SMOD("gs.Game.Embed",Game.Embed);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
