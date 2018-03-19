@@ -7,11 +7,11 @@
 	});
 
 	Component.List=µ.Class(Component,{
-		constructor:function(data=[],mapper=Component.STD_MAPPER,{columns=1,active=0,controllerMapping=Component.STD_CONTROLLER_MAPPING}={})
+		constructor:function(data=[],mapper=Component.STD_MAPPER,{columns=1,active=0,controllerMappings=Component.STD_CONTROLLER_MAPPINGS}={})
 		{
 			SC.rs.all(this,["_step","moveRight","moveLeft","moveDown","moveUp"]);
 
-			this.mega(controllerMapping);
+			this.mega(controllerMappings);
 
 			this.columns=1;
 			this.data=data;
@@ -148,7 +148,7 @@
 	});
 
 	Component.STD_MAPPER=(e,d)=>e.textContent=d;
-	Component.STD_CONTROLLER_MAPPING=new Map([[null,{
+	Component.STD_CONTROLLER_MAPPINGS=new Map([[null,{
 		"stick":{
 			"null":"move"
 		}
@@ -157,6 +157,6 @@
 	Component.MIN_MOVEMENT_TIMEOUT=125;
 	Component.MOVEMENT_ACCELERATION=1.2;
 
-	SMOD("gs.Component.List",Component.List);
+	SMOD("gs.Comp.List",Component.List);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

@@ -30,8 +30,6 @@
 			this.domElement.src=this.url;
 			this.domElement.addEventListener("load",this._onLoad,false);
 			window.addEventListener("message",this._onMessage,false);
-
-			let pauseTimer=null;
 		},
 		_onLoad()
 		{
@@ -77,11 +75,6 @@
 		setPause(value)
 		{
 			this.mega(value);
-			clearTimeout(this.pauseTimer);
-			this.pauseTimer=setTimeout(this._sendPause,15)
-		},
-		_sendPause()
-		{
 			this._send({
 				type:"pause",
 				value:this.pause

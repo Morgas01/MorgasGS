@@ -244,6 +244,9 @@
 	 *	provides mega and basic destroy method
 	 */
 	µ.BaseClass=µ.Class({
+		/**
+		 * calls same function from prototype chain as the caller
+		 */
 		mega:function mega()
 		{
 			let isFirstCall=false,rtn;
@@ -2411,12 +2414,10 @@
 			case "function":
 				isGetter=true;
 				break;
-			case "object":
-				if(!(Symbol.iterator in mapping))
-				{
-					mapping=Object.entries(mapping);
-				}
-				break;
+		}
+		if(!(Symbol.iterator in mapping))
+		{
+			mapping=Object.entries(mapping);
 		}
 		for(let entry of mapping)
 		{

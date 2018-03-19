@@ -123,7 +123,24 @@
 			"rescope"
 		]
 	},
-	"gs.Component.List": {
+	"gs.Comp.Course": {
+		"deps": [
+			"gs.Component"
+		],
+		"uses": [
+			"rescope"
+		]
+	},
+	"gs.Comp.Course.Svg": {
+		"deps": [
+			"gs.Comp.Course"
+		],
+		"uses": [
+			"rescope",
+			"proxy"
+		]
+	},
+	"gs.Comp.List": {
 		"deps": [
 			"gs.Component"
 		],

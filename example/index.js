@@ -33,15 +33,25 @@ let keyboardController=new µ.gs.Controller.Keyboard({
 });
 system.addController(keyboardController);
 
+let loadGame=function(name)
+{
+	let gameClass=µ.gs.Game.getGameByName(name);
+	if(!gameClass)
+	{
+		gameClass=µ.gs.Game.Remote.implement(name,"games/embeddedGameLoader.html?game="+name);
+	}
+	system.setGame(new gameClass());
+}
+
 document.getElementById("goBtn").addEventListener("click",function()
 {
 	let gameName=gameSelect.value;
 	if(!gameName) return;
 
-	let gameClass=µ.gs.Game.getGameByName(gameName);
-	if(!gameClass)
-	{
-		gameClass=µ.gs.Game.Remote.implement(gameName,"games/embeddedGameLoader.html?game="+gameName);
-	}
-	system.setGame(new gameClass());
+	loadGame(gameName);
 },false);
+
+if(µ.util.queryParam.game)
+{
+	loadGame(µ.util.queryParam.game);
+}

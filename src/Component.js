@@ -4,30 +4,34 @@
 
 	//SC=SC({});
 
+	/** @typedef {Object} controllerMapping_task
+	 * @property {String} action
+	 * @property {Any} (data)
+	 */
 	/** @typedef {Object} controllerMapping
-	 * @property {Object.<Number,String>} (button)
-	 * @property {Object.<Number,String>} (axis)
-	 * @property {Object.<Number,String>} (stick)
+	 * @property {Object.<Number,controllerMapping_task>} (button)
+	 * @property {Object.<Number,controllerMapping_task>} (axis)
+	 * @property {Object.<Number,controllerMapping_task>} (stick)
 	 */
 
 	gs.Component=µ.Class({
 		[µ.Class.symbols.abstract]:true,
-		constructor:function(controllerMapping=new Map())
+		constructor:function(controllerMappings=new Map())
 		{
 			/** @type {Map.<Number,controllerMapping>} */
-			this.controllerMapping=controllerMapping;
+			this.controllerMappings=controllerMappings;
 			/** @type {WeakMap.<Number,Set<Number>>} */
 			this.pressedButtons=new WeakMap();
 		},
-		addControllerMapping(controllerID,type,index,action)
+		addControllerMapping(controllerID,type,index,action,data)
 		{
-			if(!this.controllerMapping.has(controllerID))
+			if(!this.controllerMappings.has(controllerID))
 			{
-				this.controllerMapping.set(controllerID,{});
+				this.controllerMappings.set(controllerID,{});
 			}
-			let mapping=this.controllerMapping.get(controllerID);
+			let mapping=this.controllerMappings.get(controllerID);
 			if(!mapping[type]) mapping[type]={};
-			mapping[type][index]=action;
+			mapping[type][index]={action:action,data:data};
 			return this;
 		},
 		/** @type {Object.<String,Function>} */
@@ -38,19 +42,19 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.controllerMapping.get(event.controllerID);
+			let mapping=this.controllerMappings.get(event.controllerID);
 			if(!mapping)
 			{
-				mapping=this.controllerMapping.get(null);
+				mapping=this.controllerMappings.get(null);
 			}
 			if(mapping&&mapping[event.type])
 			{
 				let typeMapping=mapping[event.type];
-				let indexMapping=typeMapping[event.index]||typeMapping[null];
-				if(indexMapping&&indexMapping in this.actions)
+				let task=typeMapping[event.index]||typeMapping[null];
+				if(task&&task.action in this.actions)
 				{
 					let action=this.actions[indexMapping];
-					action.call(this,event.value,event);
+					action.call(this,event.value,data,event);
 					return true;
 				}
 			}

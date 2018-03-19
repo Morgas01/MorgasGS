@@ -498,8 +498,6 @@
 			this.domElement.src=this.url;
 			this.domElement.addEventListener("load",this._onLoad,false);
 			window.addEventListener("message",this._onMessage,false);
-
-			let pauseTimer=null;
 		},
 		_onLoad()
 		{
@@ -545,11 +543,6 @@
 		setPause(value)
 		{
 			this.mega(value);
-			clearTimeout(this.pauseTimer);
-			this.pauseTimer=setTimeout(this._sendPause,15)
-		},
-		_sendPause()
-		{
 			this._send({
 				type:"pause",
 				value:this.pause
@@ -794,13 +787,13 @@
 					this.selectGamepad()
 					.then(newGameCon=>{
 						this.system.addController(newGameCon);
-						this.editGamepad(newGameCon);
+						this.mapGamepad(newGameCon);
 					});
 					break;
 				case "addKeyboard":
 					let newKeyCon=new SC.Keyboard();
 					this.system.addController(newKeyCon);
-					controllerConfig.editKeyboard(newKeyCon);
+					controllerConfig.mapKeyboard(newKeyCon);
 					break;
 				case "mapping":
 					selected=this.list.querySelector(":checked").parentNode;
@@ -822,16 +815,18 @@
 
 					break;
 				case "setting":
-					selected=this.list.querySelector(":checked").parentNode;
-					controller=this.controllerMap.get(selected);
+					selected=this.list.querySelector(":checked");
+					if(!selected) return ;
+					controller=this.controllerMap.get(selected.parentNode);
 					if(!controller) return ;
 
 					this.setting(controller);
 
 					break;
 				case "remove":
-					selected=this.list.querySelector(":checked").parentNode;
-					controller=this.controllerMap.get(selected);
+					selected=this.list.querySelector(":checked");
+					if(!selected) return ;
+					controller=this.controllerMap.get(selected.parentNode);
 					this.system.removeController(controller);
 					this.updateSystem();
 					break;
@@ -1056,12 +1051,9 @@
 				}
 			});
 
-			let inspectInterval=setInterval(()=>inspectController.update(),100);
 			template.okBtn.addEventListener("click",()=>
 			{
 				clearInterval(inspectInterval);
-				inspectController.removeEventListener("controllerChange",this);
-				inspectController.destroy();
 				this.domElement.removeChild(template.domElement);
 				this.updateSystem();
 				this.domElement.appendChild(this.main);
@@ -1077,8 +1069,8 @@
 			inspectController.addEventListener("controllerChange",this,function(event)
 			{
 				if(
-					((event.type==="button"||event.type==="axis")&&Math.abs(event.value.value)<25) ||
-					(event.type==="stick"&&(Math.abs(event.value.x)<25||Math.abs(event.value.y)<25))
+					((event.type==="button"||event.type==="axis")&&Math.abs(event.value.value)<50) ||
+					(event.type==="stick"&&(Math.abs(event.value.x)<50||Math.abs(event.value.y)<50))
 				)
 				{
 					return;
@@ -1640,30 +1632,34 @@
 
 	//SC=SC({});
 
+	/** @typedef {Object} controllerMapping_task
+	 * @property {String} action
+	 * @property {Any} (data)
+	 */
 	/** @typedef {Object} controllerMapping
-	 * @property {Object.<Number,String>} (button)
-	 * @property {Object.<Number,String>} (axis)
-	 * @property {Object.<Number,String>} (stick)
+	 * @property {Object.<Number,controllerMapping_task>} (button)
+	 * @property {Object.<Number,controllerMapping_task>} (axis)
+	 * @property {Object.<Number,controllerMapping_task>} (stick)
 	 */
 
 	gs.Component=µ.Class({
 		[µ.Class.symbols.abstract]:true,
-		constructor:function(controllerMapping=new Map())
+		constructor:function(controllerMappings=new Map())
 		{
 			/** @type {Map.<Number,controllerMapping>} */
-			this.controllerMapping=controllerMapping;
+			this.controllerMappings=controllerMappings;
 			/** @type {WeakMap.<Number,Set<Number>>} */
 			this.pressedButtons=new WeakMap();
 		},
-		addControllerMapping(controllerID,type,index,action)
+		addControllerMapping(controllerID,type,index,action,data)
 		{
-			if(!this.controllerMapping.has(controllerID))
+			if(!this.controllerMappings.has(controllerID))
 			{
-				this.controllerMapping.set(controllerID,{});
+				this.controllerMappings.set(controllerID,{});
 			}
-			let mapping=this.controllerMapping.get(controllerID);
+			let mapping=this.controllerMappings.get(controllerID);
 			if(!mapping[type]) mapping[type]={};
-			mapping[type][index]=action;
+			mapping[type][index]={action:action,data:data};
 			return this;
 		},
 		/** @type {Object.<String,Function>} */
@@ -1674,19 +1670,19 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.controllerMapping.get(event.controllerID);
+			let mapping=this.controllerMappings.get(event.controllerID);
 			if(!mapping)
 			{
-				mapping=this.controllerMapping.get(null);
+				mapping=this.controllerMappings.get(null);
 			}
 			if(mapping&&mapping[event.type])
 			{
 				let typeMapping=mapping[event.type];
-				let indexMapping=typeMapping[event.index]||typeMapping[null];
-				if(indexMapping&&indexMapping in this.actions)
+				let task=typeMapping[event.index]||typeMapping[null];
+				if(task&&task.action in this.actions)
 				{
 					let action=this.actions[indexMapping];
-					action.call(this,event.value,event);
+					action.call(this,event.value,data,event);
 					return true;
 				}
 			}
@@ -1726,11 +1722,11 @@
 	});
 
 	Component.List=µ.Class(Component,{
-		constructor:function(data=[],mapper=Component.STD_MAPPER,{columns=1,active=0,controllerMapping=Component.STD_CONTROLLER_MAPPING}={})
+		constructor:function(data=[],mapper=Component.STD_MAPPER,{columns=1,active=0,controllerMappings=Component.STD_CONTROLLER_MAPPINGS}={})
 		{
 			SC.rs.all(this,["_step","moveRight","moveLeft","moveDown","moveUp"]);
 
-			this.mega(controllerMapping);
+			this.mega(controllerMappings);
 
 			this.columns=1;
 			this.data=data;
@@ -1867,7 +1863,7 @@
 	});
 
 	Component.STD_MAPPER=(e,d)=>e.textContent=d;
-	Component.STD_CONTROLLER_MAPPING=new Map([[null,{
+	Component.STD_CONTROLLER_MAPPINGS=new Map([[null,{
 		"stick":{
 			"null":"move"
 		}
@@ -1876,7 +1872,165 @@
 	Component.MIN_MOVEMENT_TIMEOUT=125;
 	Component.MOVEMENT_ACCELERATION=1.2;
 
-	SMOD("gs.Component.List",Component.List);
+	SMOD("gs.Comp.List",Component.List);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let Component=GMOD("gs.Component");
+
+	SC=SC({
+		rs:"rescope"
+	});
+
+	Component.Course=µ.Class(Component,{
+		[µ.Class.symbols.abstract]:true,
+		constructor:function({controllerMappings,items=[],elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
+		{
+			this.mega(controllerMappings);
+
+			this.domElement=domElement;
+			this.domElement.classList.add("Component","Course");
+
+			this.items=new Set();
+
+			this.addItems(items);
+		},
+		addItem(item)
+		{
+			this.items.add(item);
+		},
+		addItems(items)
+		{
+			if(!items) return;
+			for(let item of items) this.addItem(item);
+		},
+		removeItem(item)
+		{
+			this.items.delete(item);
+		},
+		removeItems(items)
+		{
+			if(!items) return;
+			for(let item of items) this.removeItem(item);
+		}
+	});
+
+	/**
+	 * Basic 2D Item for Course
+	 */
+	Component.Course.Item=µ.Class({
+		constructor:function({x=0,y=0,name=""}={})
+		{
+			this.x=x;
+			this.y=y;
+			this.name=name;
+		},
+		setPosition(x=this.x,y=this.y)
+		{
+			this.x=x;
+			this.y=y;
+		},
+		move(x=0,y=0)
+		{
+			this.setPosition(this.x+x,this.y+y);
+		},
+	});
+
+	SMOD("gs.Comp.Course",Component.Course);
+
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let Course=GMOD("gs.Comp.Course");
+
+	SC=SC({
+		rs:"rescope",
+		proxy:"proxy"
+	});
+
+	Course.Svg=µ.Class(Course,{
+		constructor:function(param={})
+		{
+			let svg=this.domElement=document.createElementNS(Course.Svg.XMLNS,"svg");
+
+			this.mega(param);
+
+			this.defs=document.createElementNS(Course.Svg.XMLNS,"defs");
+			svg.appendChild(this.defs);
+
+			for(let attr of ["version","baseProfile","width","height","viewBox","preserveAspectRatio"])
+			{
+				Object.defineProperty(this,attr,{
+					configurable:true,
+					enumerable:true,
+					get:()=>svg.getAttribute(attr),
+					set:value=>svg.setAttribute(attr,value)
+				});
+			};
+
+			this.version=Course.Svg.VERSION;
+			this.baseProfile=Course.Svg.BASE_PROFILE;
+
+			({
+				width:this.width=null,
+				height:this.height=null,
+				preserveAspectRatio:this.preserveAspectRatio="none",
+
+				viewTop:param.viewTop=0,
+				viewLeft:param.viewLeft=0,
+				viewWidth:param.viewWidth=this.width==null?this.width:100,
+				viewHeight:param.viewHeight=this.height==null?this.height:100,
+				viewBox:this.viewBox=param.viewTop+" "+param.viewLeft+" "+param.viewWidth+" "+param.viewHeight
+			}=param);
+
+		},
+		addDef(svgElement)
+		{
+			this.defs.appendChild(svgElement);
+		},
+		addItem(item)
+		{
+			this.mega();
+			this.domElement.appendChild(item.svgElement);
+		},
+		removeItem(item)
+		{
+			this.mega();
+			this.domElement.removeChild(item.svgElement);
+		}
+	});
+	Course.Svg.VERSION=1.2;
+	Course.Svg.BASE_PROFILE="full";
+	Course.Svg.XMLNS="http://www.w3.org/2000/svg";
+
+	Course.Svg.Item=µ.Class(Course.Item,{
+		constructor:function(param={})
+		{
+			this.mega(param);
+			this.svgElement=document.createElementNS(Course.Svg.XMLNS,"g");
+			this.setPosition();
+		},
+		setPosition(x,y)
+		{
+			this.mega(x,y);
+			this.setAttribute("transform",`translate(${this.x} ${this.y})`);
+		},
+		getAttribute(name,value)
+		{
+			return this.svgElement.getAttribute(name,value)
+		},
+		setAttribute(name,value)
+		{
+			return this.svgElement.setAttribute(name,value)
+		}
+	});
+
+	SMOD("gs.Comp.Course.Svg",Course.Svg);
+
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/

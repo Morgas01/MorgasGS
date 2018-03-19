@@ -16,5 +16,7 @@
 	"gs.MemoryCard": "MemoryCard.js",
 	"gs.Stick": "Stick.js",
 	"gs.System": "System.js",
-	"gs.Component.List": "components/List.js"
+	"gs.Comp.Course": "components/Course.js",
+	"gs.Comp.Course.Svg": "components/Course.Svg.js",
+	"gs.Comp.List": "components/List.js"
 }

@@ -94,13 +94,13 @@
 					this.selectGamepad()
 					.then(newGameCon=>{
 						this.system.addController(newGameCon);
-						this.editGamepad(newGameCon);
+						this.mapGamepad(newGameCon);
 					});
 					break;
 				case "addKeyboard":
 					let newKeyCon=new SC.Keyboard();
 					this.system.addController(newKeyCon);
-					controllerConfig.editKeyboard(newKeyCon);
+					controllerConfig.mapKeyboard(newKeyCon);
 					break;
 				case "mapping":
 					selected=this.list.querySelector(":checked").parentNode;
@@ -122,16 +122,18 @@
 
 					break;
 				case "setting":
-					selected=this.list.querySelector(":checked").parentNode;
-					controller=this.controllerMap.get(selected);
+					selected=this.list.querySelector(":checked");
+					if(!selected) return ;
+					controller=this.controllerMap.get(selected.parentNode);
 					if(!controller) return ;
 
 					this.setting(controller);
 
 					break;
 				case "remove":
-					selected=this.list.querySelector(":checked").parentNode;
-					controller=this.controllerMap.get(selected);
+					selected=this.list.querySelector(":checked");
+					if(!selected) return ;
+					controller=this.controllerMap.get(selected.parentNode);
 					this.system.removeController(controller);
 					this.updateSystem();
 					break;
@@ -356,12 +358,9 @@
 				}
 			});
 
-			let inspectInterval=setInterval(()=>inspectController.update(),100);
 			template.okBtn.addEventListener("click",()=>
 			{
 				clearInterval(inspectInterval);
-				inspectController.removeEventListener("controllerChange",this);
-				inspectController.destroy();
 				this.domElement.removeChild(template.domElement);
 				this.updateSystem();
 				this.domElement.appendChild(this.main);
@@ -377,8 +376,8 @@
 			inspectController.addEventListener("controllerChange",this,function(event)
 			{
 				if(
-					((event.type==="button"||event.type==="axis")&&Math.abs(event.value.value)<25) ||
-					(event.type==="stick"&&(Math.abs(event.value.x)<25||Math.abs(event.value.y)<25))
+					((event.type==="button"||event.type==="axis")&&Math.abs(event.value.value)<50) ||
+					(event.type==="stick"&&(Math.abs(event.value.x)<50||Math.abs(event.value.y)<50))
 				)
 				{
 					return;
