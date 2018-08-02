@@ -53,8 +53,8 @@
 				let task=typeMapping[event.index]||typeMapping[null];
 				if(task&&task.action in this.actions)
 				{
-					let action=this.actions[indexMapping];
-					action.call(this,event.value,data,event);
+					let action=this.actions[task.action];
+					action.call(this,event.value,task.data,event);
 					return true;
 				}
 			}

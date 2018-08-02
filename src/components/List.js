@@ -150,7 +150,7 @@
 	Component.STD_MAPPER=(e,d)=>e.textContent=d;
 	Component.STD_CONTROLLER_MAPPINGS=new Map([[null,{
 		"stick":{
-			"null":"move"
+			"null":{action:"move"}
 		}
 	}]]);
 	Component.INITIAL_MOVEMENT_TIMEOUT=800;

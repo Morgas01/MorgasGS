@@ -1681,8 +1681,8 @@
 				let task=typeMapping[event.index]||typeMapping[null];
 				if(task&&task.action in this.actions)
 				{
-					let action=this.actions[indexMapping];
-					action.call(this,event.value,data,event);
+					let action=this.actions[task.action];
+					action.call(this,event.value,task.data,event);
 					return true;
 				}
 			}
@@ -1865,7 +1865,7 @@
 	Component.STD_MAPPER=(e,d)=>e.textContent=d;
 	Component.STD_CONTROLLER_MAPPINGS=new Map([[null,{
 		"stick":{
-			"null":"move"
+			"null":{action:"move"}
 		}
 	}]]);
 	Component.INITIAL_MOVEMENT_TIMEOUT=800;
