@@ -1,0 +1,59 @@
+.ResourceWar {
+	display:flex;
+	justify-content:center;
+	align-items:center;
+
+    --team-color:gray;
+}
+.ResourceWar .Course {
+	background-color:white;
+}
+.ResourceWar .Component.Course {
+	width:auto;
+	height:auto;
+	max-width:100%;
+	max-height:100%;
+}
+
+[data-team="1"]{
+    --team-color:lightgreen;
+}
+[data-team="2"]{
+    --team-color:blue;
+}
+[data-team="3"]{
+    --team-color:red;
+}
+[data-team="4"]{
+    --team-color:gold;
+}
+[data-team="5"]{
+    --team-color:violet;
+}
+
+.generator-inner {
+	fill:var(--generator-inner-color);
+}
+.generator-outer {
+	fill:var(--generator-outer-color);
+}
+
+.generator {
+	--generator-outer-color:var(--team-color);
+	--generator-inner-color:white;
+}
+.generator.selected {
+	--generator-inner-color: gray;
+}
+.generator text {
+    font-size: .15em;
+    font-family: monospace;
+}
+.cursor {
+	fill: none;
+	stroke: black;
+	stroke-width: .5;
+}
+.Package {
+    fill:var(--team-color);
+}

@@ -18,10 +18,11 @@
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(controllerMappings=new Map())
 		{
+			//TODO either maps in mapping or mapping as object; not mixed!
 			/** @type {Map.<Number,controllerMapping>} */
 			this.controllerMappings=controllerMappings;
-			/** @type {WeakMap.<Number,Set<Number>>} */
-			this.pressedButtons=new WeakMap();
+			/** @type {Map.<Number,Set<Number>>} */
+			this.pressedButtons=new Map();
 		},
 		addControllerMapping(controllerID,type,index,action,data)
 		{
@@ -54,7 +55,7 @@
 				if(task&&task.action in this.actions)
 				{
 					let action=this.actions[task.action];
-					action.call(this,event.value,task.data,event);
+					action.call(this,event,task.data,event);
 					return true;
 				}
 			}
@@ -68,14 +69,19 @@
 		 */
 		_acceptButton(event)
 		{
-			if(!button.pressed)
+			if(!this.pressedButtons.has(event.controllerID))
 			{
-				this.pressedButtons.delete(event.index);
+				this.pressedButtons.set(event.controllerID,new Set())
+			}
+			let controllerSet=this.pressedButtons.get(event.controllerID);
+			if(!event.value.pressed)
+			{
+				controllerSet.delete(event.value.index);
 				return false;
 			}
-			else if(!this.pressedButtons.has(event.index))
+			else if(!controllerSet.has(event.value.index))
 			{
-				this.pressedButtons.add(event.index);
+				controllerSet.add(event.value.index);
 				return true;
 			}
 		}

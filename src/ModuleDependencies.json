@@ -127,9 +127,7 @@
 		"deps": [
 			"gs.Component"
 		],
-		"uses": [
-			"rescope"
-		]
+		"uses": []
 	},
 	"gs.Comp.Course.Svg": {
 		"deps": [

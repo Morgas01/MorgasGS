@@ -49,24 +49,30 @@
 		},
 		addItem(item)
 		{
-			this.mega();
+			this.mega(item);
 			this.domElement.appendChild(item.svgElement);
 		},
 		removeItem(item)
 		{
 			this.mega();
 			this.domElement.removeChild(item.svgElement);
+		},
+		createElement(tagName)
+		{
+			return document.createElementNS(Course.Svg.XMLNS,tagName);
 		}
 	});
 	Course.Svg.VERSION=1.2;
 	Course.Svg.BASE_PROFILE="full";
 	Course.Svg.XMLNS="http://www.w3.org/2000/svg";
+	Course.Svg.createElement=Course.Svg.prototype.createElement;
 
 	Course.Svg.Item=µ.Class(Course.Item,{
 		constructor:function(param={})
 		{
+			let {tagName="g"}=param;
 			this.mega(param);
-			this.svgElement=document.createElementNS(Course.Svg.XMLNS,"g");
+			this.svgElement=this.createElement(tagName);
 			this.setPosition();
 		},
 		setPosition(x,y)
@@ -81,7 +87,8 @@
 		setAttribute(name,value)
 		{
 			return this.svgElement.setAttribute(name,value)
-		}
+		},
+		createElement:Course.Svg.createElement
 	});
 
 	SMOD("gs.Comp.Course.Svg",Course.Svg);

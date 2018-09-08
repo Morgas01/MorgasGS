@@ -1646,10 +1646,11 @@
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(controllerMappings=new Map())
 		{
+			//TODO either maps in mapping or mapping as object; not mixed!
 			/** @type {Map.<Number,controllerMapping>} */
 			this.controllerMappings=controllerMappings;
-			/** @type {WeakMap.<Number,Set<Number>>} */
-			this.pressedButtons=new WeakMap();
+			/** @type {Map.<Number,Set<Number>>} */
+			this.pressedButtons=new Map();
 		},
 		addControllerMapping(controllerID,type,index,action,data)
 		{
@@ -1682,7 +1683,7 @@
 				if(task&&task.action in this.actions)
 				{
 					let action=this.actions[task.action];
-					action.call(this,event.value,task.data,event);
+					action.call(this,event,task.data,event);
 					return true;
 				}
 			}
@@ -1696,14 +1697,19 @@
 		 */
 		_acceptButton(event)
 		{
-			if(!button.pressed)
+			if(!this.pressedButtons.has(event.controllerID))
 			{
-				this.pressedButtons.delete(event.index);
+				this.pressedButtons.set(event.controllerID,new Set())
+			}
+			let controllerSet=this.pressedButtons.get(event.controllerID);
+			if(!event.value.pressed)
+			{
+				controllerSet.delete(event.value.index);
 				return false;
 			}
-			else if(!this.pressedButtons.has(event.index))
+			else if(!controllerSet.has(event.value.index))
 			{
-				this.pressedButtons.add(event.index);
+				controllerSet.add(event.value.index);
 				return true;
 			}
 		}
@@ -1880,9 +1886,7 @@
 
 	let Component=GMOD("gs.Component");
 
-	SC=SC({
-		rs:"rescope"
-	});
+	SC=SC({});
 
 	Component.Course=µ.Class(Component,{
 		[µ.Class.symbols.abstract]:true,
@@ -1899,6 +1903,7 @@
 		},
 		addItem(item)
 		{
+			item.course=this;
 			this.items.add(item);
 		},
 		addItems(items)
@@ -1921,8 +1926,10 @@
 	 * Basic 2D Item for Course
 	 */
 	Component.Course.Item=µ.Class({
-		constructor:function({x=0,y=0,name=""}={})
+		constructor:function({course,x=0,y=0,name=""}={})
 		{
+			this.course=course;
+			if(!this.course) throw new RangeError("#Course.Item:001 no course present");
 			this.x=x;
 			this.y=y;
 			this.name=name;
@@ -1936,6 +1943,11 @@
 		{
 			this.setPosition(this.x+x,this.y+y);
 		},
+		destroy()
+		{
+			this.course.removeItem(this);
+			this.mega();
+		}
 	});
 
 	SMOD("gs.Comp.Course",Component.Course);
@@ -1994,24 +2006,30 @@
 		},
 		addItem(item)
 		{
-			this.mega();
+			this.mega(item);
 			this.domElement.appendChild(item.svgElement);
 		},
 		removeItem(item)
 		{
 			this.mega();
 			this.domElement.removeChild(item.svgElement);
+		},
+		createElement(tagName)
+		{
+			return document.createElementNS(Course.Svg.XMLNS,tagName);
 		}
 	});
 	Course.Svg.VERSION=1.2;
 	Course.Svg.BASE_PROFILE="full";
 	Course.Svg.XMLNS="http://www.w3.org/2000/svg";
+	Course.Svg.createElement=Course.Svg.prototype.createElement;
 
 	Course.Svg.Item=µ.Class(Course.Item,{
 		constructor:function(param={})
 		{
+			let {tagName="g"}=param;
 			this.mega(param);
-			this.svgElement=document.createElementNS(Course.Svg.XMLNS,"g");
+			this.svgElement=this.createElement(tagName);
 			this.setPosition();
 		},
 		setPosition(x,y)
@@ -2026,7 +2044,8 @@
 		setAttribute(name,value)
 		{
 			return this.svgElement.setAttribute(name,value)
-		}
+		},
+		createElement:Course.Svg.createElement
 	});
 
 	SMOD("gs.Comp.Course.Svg",Course.Svg);

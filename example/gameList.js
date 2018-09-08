@@ -1,5 +1,6 @@
 window.gameList=[
 	"SystemSettings",
 	"TickTackToe",
-	"Snake"
+	"Snake",
+	"ResourceWar"
 ];

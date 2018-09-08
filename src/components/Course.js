@@ -2,9 +2,7 @@
 
 	let Component=GMOD("gs.Component");
 
-	SC=SC({
-		rs:"rescope"
-	});
+	SC=SC({});
 
 	Component.Course=µ.Class(Component,{
 		[µ.Class.symbols.abstract]:true,
@@ -43,8 +41,10 @@
 	 * Basic 2D Item for Course
 	 */
 	Component.Course.Item=µ.Class({
-		constructor:function({x=0,y=0,name=""}={})
+		constructor:function({course,x=0,y=0,name=""}={})
 		{
+			this.course=course;
+			if(!this.course) throw new RangeError("#Course.Item:001 no course present");
 			this.x=x;
 			this.y=y;
 			this.name=name;
@@ -58,6 +58,11 @@
 		{
 			this.setPosition(this.x+x,this.y+y);
 		},
+		destroy()
+		{
+			this.course.removeItem(this);
+			this.mega();
+		}
 	});
 
 	SMOD("gs.Comp.Course",Component.Course);
