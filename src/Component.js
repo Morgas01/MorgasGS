@@ -64,11 +64,13 @@
 		/**
 		 * keeps track of pressed buttons and returns true if a button was pressed now
 		 * @protected
-		 * @param {gs.Controller.ChangeEvent} event
+		 * @param {gs.Controller.ChangeEvent} event - button change event
 		 * @returns {Boolean} button pressed now
 		 */
 		_acceptButton(event)
 		{
+			if(event.type!=="button") return false;
+
 			if(!this.pressedButtons.has(event.controllerID))
 			{
 				this.pressedButtons.set(event.controllerID,new Set())
@@ -76,12 +78,12 @@
 			let controllerSet=this.pressedButtons.get(event.controllerID);
 			if(!event.value.pressed)
 			{
-				controllerSet.delete(event.value.index);
+				controllerSet.delete(event.index);
 				return false;
 			}
-			else if(!controllerSet.has(event.value.index))
+			else if(!controllerSet.has(event.index))
 			{
-				controllerSet.add(event.value.index);
+				controllerSet.add(event.index);
 				return true;
 			}
 		}

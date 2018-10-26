@@ -1,6 +1,8 @@
 
 let SC=µ.shortcut({
-	rs:"rescope"
+	rs:"rescope",
+	mapRegister:"mapRegister",
+	rq:"request"
 });
 
 let ResourceWarGameWrapper=µ.Class(µ.gs.Game,{
@@ -14,6 +16,11 @@ let ResourceWarGameWrapper=µ.Class(µ.gs.Game,{
 	onControllerChange(event)
 	{
 		this.resourceWar.consumeControllerChange(event);
+	},
+	setPause(value)
+	{
+		this.mega(value);
+		this.resourceWar.setPause(value);
 	}
 });
 let ResourceWar=µ.Class(µ.gs.Component,{
@@ -21,44 +28,24 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 	{
 		µ.util.function.rescope.all(this,["loop"]);
 		this.mega();
+
+		this.time=0;
+		this.pause=true;
 		this.course=new µ.gs.Component.Course.Svg();
 		this.domElement=this.course.domElement;
-		let generatorSymbol=this.course.createElement("symbol");
-		generatorSymbol.innerHTML=
-`
-<circle r="2" cx="2" cy="2" class="generator-outer"></circle>
-<circle r="1" cx="2" cy="2" class="generator-inner"></circle>
-`		;
-		generatorSymbol.id="generator";
-		this.course.domElement.appendChild(generatorSymbol);
-		let cursorSymbol=this.course.createElement("symbol");
-		cursorSymbol.innerHTML=
-`
-<circle r="1.75" cx="2" cy="2" class="cursor">
-	<animate attributeName="r" dur="2" values="1.75;.25;1.75" repeatCount="indefinite" keyTimes="0;.75;1"></animate>
-</circle>
-`		;
-		cursorSymbol.id="cursor";
-		this.course.domElement.appendChild(cursorSymbol);
 
 		this.loopId=null;
 		this.lastTime=null;
+		this.movementRegister=SC.mapRegister();
 
-		let item1=new ResourceWar.Generator({course:this.course,team:1,x:5,y:5});
-		let item2=new ResourceWar.Generator({course:this.course,x:80,y:70});
-		this.course.addItems([
-			item1,
-			item2,
-			new ResourceWar.Generator({course:this.course,x:60,y:50,resources:10}),
-			new ResourceWar.Generator({course:this.course,x:60,y:70}),
-			new ResourceWar.Generator({course:this.course,x:80,y:50})
-		]);
-		this.player=new ResourceWar.Player({course:this.course,team:1,active:item1});
+		this._createSymbols();
 
+		this.loadLevel("test")
+		//.then(()=>this.setPause(false)); // set game pause state
 	},
 	setPause(value)
 	{
-		this.mega(value);
+		this.pause=!!value;
 		if(this.pause)
 		{
 			cancelAnimationFrame(this.loopId);
@@ -66,23 +53,91 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		}
 		else this.loop();
 	},
+	_createSymbols()
+	{
+		let generatorSymbol=this.course.createElement("symbol");
+		generatorSymbol.innerHTML=
+`
+<circle r="3" cx="3" cy="3" class="generator-outer"></circle>
+<circle r="1.5" cx="3" cy="3" class="generator-inner"></circle>
+`		;
+		generatorSymbol.id="generator";
+		this.course.domElement.appendChild(generatorSymbol);
+		let cursorSymbol=this.course.createElement("symbol");
+		cursorSymbol.innerHTML=
+`
+<circle r="2.8" cx="3" cy="3" class="cursor">
+	<animate attributeName="r" dur="2" values="2.8;1.4;2.8" repeatCount="indefinite" keyTimes="0;.75;1"></animate>
+</circle>
+`		;
+		cursorSymbol.id="cursor";
+		this.course.domElement.appendChild(cursorSymbol);
+	},
+	loadLevel(name)
+	{
+		return SC.rq.json("resourceWar_maps/"+name+".json")
+		.then(json=>
+		{
+			let firstActive=null;
+			for(let generatorJson of json.generators)
+			{
+				generatorJson.course=this.course;
+				let item=new ResourceWar.Generator(generatorJson);
+				if(item.team==1)
+				{
+					firstActive=item;
+				}
+				this.course.addItem(item);
+			}
+
+			/*
+			let item1=new ResourceWar.Generator({course:this.course,team:1,x:5,y:5});
+			let item2=new ResourceWar.Generator({course:this.course,x:80,y:70});
+			this.course.addItems([
+				item1,
+				item2,
+				new ResourceWar.Generator({course:this.course,x:60,y:50,resources:10}),
+				new ResourceWar.Generator({course:this.course,x:60,y:70}),
+				new ResourceWar.Generator({course:this.course,x:80,y:50})
+			]);*/
+
+
+			this.player=new ResourceWar.Player({course:this.course,team:1,active:firstActive});
+		});
+	},
 	consumeControllerChange(event)
 	{
 		this.player.consumeControllerChange(event);
 	},
-	loop(time)
+	loop(timeNow)
 	{
 		cancelAnimationFrame(this.loopId); //prevent simultaneous calls
 		this.loopId=requestAnimationFrame(this.loop);
 		if(!this.lastTime)
 		{
-			this.lastTime=time;
+			this.lastTime=timeNow;
 			return;
 		}
-		let diff=time-this.lastTime;
-		this.lastTime=time;
+		let diff=timeNow-this.lastTime;
+		this.lastTime=timeNow;
+		this.time+=diff;
 
-		//this.player.step(diff,this.lastTime);
+		for(let item of this.course.items)
+		{
+			switch (item.name)
+			{
+				case "generator":
+					this.updateGenerator(item);
+					break;
+				case "package":
+					this.updatePackage(item,diff);
+				case "cursor":
+					// od nothing
+					break;
+				default:
+					throw new RangeError("unknown item in Course");
+			}
+		}
 	},
 	setActive(generator)
 	{
@@ -90,20 +145,120 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		{
 			this.active.svgElement.classList.remove("active");
 		}
+	},
+	getPackageMovement(generator)
+	{
+		let movement=this.movementRegister.get(generator).get(generator.target);
+		if(!movement)
+		{
+			let dx=generator.target.x-generator.x;
+			let dy=generator.target.y-generator.y;
+			let distance=Math.sqrt(dx**2+dy**2);
+			movement={
+				direction:{
+					x:dx/distance,
+					y:dy/distance
+				},
+				distance:distance
+			};
+			this.movementRegister.get(generator).set(generator.target,movement);
+
+			let reverseMovement={
+				direction:{
+					x:-movement.direction.x,
+					y:-movement.direction.y
+				},
+				distance:movement.distance
+			};
+			this.movementRegister.get(generator.target).set(generator,reverseMovement);
+		}
+		return movement
+	},
+	createPackage(generator)
+	{
+		let packageResources=Math.ceil(generator.resources*generator.packageRatio);
+		if(packageResources>0)
+		{
+			let speed=Math.max(5,generator.packageSpeed-packageResources*generator.packageSpeedFraction);
+			generator.resources-=packageResources;
+			new ResourceWar.Package({
+				generator:generator,
+				speed:speed,
+				resources:packageResources,
+				movement:this.getPackageMovement(generator)
+			});
+			generator.updateText();
+		}
+	},
+	updateGenerator(generator)
+	{
+		if(generator.nextGenerationTime<this.time)
+		{
+			generator.generate();
+		}
+
+		if(generator.nextPackageTime<this.time&&generator.target!=null&&generator.resources>=generator.min)
+		{
+			this.createPackage(generator);
+			if(generator.nextPackageTime+generator.packageRate<this.time)
+			{
+				generator.nextPackageTime=this.time;
+			}
+			generator.nextPackageTime+=generator.packageRate;
+		}
+	},
+	updatePackage(packageItem,timeDiff)
+	{
+		let travelDistance=packageItem.speed*timeDiff/1000;
+		packageItem.distance-=travelDistance;
+		if(packageItem.distance<=0)
+		{
+			//hit target
+
+			let generator = packageItem.target;
+			if(generator.team===packageItem.team)
+			{
+				generator.resources+=packageItem.resources;
+			}
+			else
+			{
+				generator.resources-=packageItem.resources;
+				if(generator.resources<=0)
+				{
+					generator.resources=-generator.resources;
+					generator.team=packageItem.team;
+					generator.nextGenerationTime=this.time+generator.generationRate;
+				}
+			}
+			generator.updateText();
+			packageItem.destroy();
+		}
+		else
+		{
+			packageItem.setPosition(packageItem.x+packageItem.direction.x*travelDistance,packageItem.y+packageItem.direction.y*travelDistance);
+		}
 	}
 });
+ResourceWar.loadedLevels=new Map();
 ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	generatorID:0,
 	constructor:function(param={})
 	{
-		let {team=null,resources=0,generation=1,max=99}=param;
 		this.generatorID=ResourceWar.Generator.prototype.generatorID++;
 
-		SC.rs.all(this,["generate","sendPackage"]);
-
-		param.name="generator "+this.generatorID;
+		param.name="generator";
 
 		this.mega(param);
+
+		this.svgElement.classList.add("generator");
+		this.svgElement.dataset.id=this.generatorID;
+		this.svgElement.innerHTML=
+`
+<use href="#generator"/>
+<text y="1.8em"/>
+`;
+		this.text=this.svgElement.children[1];
+
 		for(let attr of ["team","resources","generation","max"])
 		{
 			let val=null; // prevent string conversion
@@ -112,35 +267,56 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 				set:(t)=>val=this.svgElement.dataset[attr]=t
 			});
 		}
-		this.team=team;
-		this.resources=resources;
-		this.generation=generation;
-		this.max=max;
+		({
+			team:this.team=null,
+			resources:this.resources=0,
+			/**
+			 * amout of resources pro generation
+			 * @type {number}
+			 */
+			generation:this.generation=1,
+			/**
+			 * time between generations
+			 * @type {number}
+			 */
+			generationRate:this.generationRate=1000,
+			/**
+			 * max resources
+			 * @type {number}
+			 */
+			max:this.max=100,
+			/**
+			 * min resources to create packages
+			 * @type {number}
+			 */
+			min:this.min=3,
 
-		this.generationInerval=null;
-		this.packageInerval=null;
+			packageRate:this.packageRate=500,
+			packageRatio:this.packageRatio=0.1,
+			packageSpeed:this.packageSpeed=20,
+			packageSpeedFraction:this.packageSpeedFraction=0.5
+		}=param);
 
-		this.svgElement.classList.add("generator");
-		this.svgElement.innerHTML=
-			`
-<use href="#generator"/>
-<text y="1.3em"/>
-`;
-		this.text=this.svgElement.children[1];
+		this.nextGenerationTime=0;
+		this.nextPackageTime=0;
+		this.target=null;
 
 		this.updateText();
-		this.restartGeneration();
 	},
 	updateText()
 	{
 		let textPos;
 		if(this.resources<10)
 		{
-			textPos=".7em";
+			textPos="1.2em";
+		}
+		else if(this.resources<100)
+		{
+			textPos=".9em";
 		}
 		else
 		{
-			textPos=".45em";
+			textPos=".6em";
 		}
 		this.text.setAttribute("x",textPos);
 		this.text.textContent=this.resources;
@@ -150,120 +326,57 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		if(this.target!=target&&target!=this)
 		{
 			this.target=target;
-			if(this.packageInerval==null)
-			{
-				this.packageInerval = setInterval(this.sendPackage, 900);
-				this.sendPackage();
-			}
 		}
-		else if (this.packageInerval!=null)
+		else
 		{
 			this.target=null;
-			clearInterval(this.packageInerval);
-			this.packageInerval=null;
-		}
-	},
-	sendPackage()
-	{
-		if(this.target)
-		{
-			this._createPackage();
-		}
-	},
-	_calcPackageResources()
-	{
-		return Math.ceil(this.resources/10);
-	},
-	_createPackage()
-	{
-		let packageResources=this._calcPackageResources();
-		if(packageResources>0)
-		{
-			this.resources-=packageResources;
-			new ResourceWar.Package({
-				origin: this,
-				resources:packageResources,
-				speed:Math.max(10,30.1-packageResources/10),
-				target: this.target
-			});
-			this.updateText();
 		}
 	},
 	generate()
 	{
-		if(this.team==null)
+		if(this.team!=null&&this.resources<this.max)
 		{
-			clearInterval(this.generationInerval);
-			this.generationInerval=null;
-			return;
+			this.resources+=Math.min(this.generation,this.max-this.resources);
+			this.nextGenerationTime+=this.generationRate;
+			this.updateText();
 		}
-		if(++this.resources>this.max)
-		{
-			this.resources=this.max;
-		}
-		this.updateText();
-	},
-	restartGeneration()
-	{
-		clearInterval(this.generationInerval);
-		this.generationInerval=null;
-		setInterval(this.generate,1000);
-	},
-	hit(packageItem)
-	{
-		if(this.team!=packageItem.team)
-		{
-			if(this.resources<packageItem.resources)
-			{
-				this.team=packageItem.team;
-				this.resources=packageItem.resources-this.resources;
-				this.restartGeneration();
-			}
-			else
-			{
-				this.resources-=packageItem.resources;
-			}
-		}
-		else
-		{
-			this.resources+=packageItem.resources;
-		}
-
-		if(this.resources>this.max)
-		{
-			this.resources=this.max;
-		}
-		this.updateText();
 	}
 });
 ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	constructor:function(param={})
 	{
-		let {origin,origin:{team=null},target,speed=30,resources}=param;
+		let {
+			generator,
+			generator:{
+				course,
+				team=null,
+				target,
+				x,
+				y
+			},
+			speed=20,
+			resources,
+			movement:{
+				direction,
+				distance
+			}
+		}=param;
 
-		param.name="package "+team;
-		param.tagName="circle";
+		this.mega({
+			course,
+			name:"package",
+			tagName:"circle",
+			x,
+			y
+		});
 
-		param.course=origin.course;
-		this.mega(param);
-
-		this.setAttribute("r",1+resources/100);
-		this.setAttribute("cx","2");
-		this.setAttribute("cy","2");
+		this.setAttribute("r",1+resources/8);
+		this.setAttribute("cx","3");
+		this.setAttribute("cy","3");
 
 		this.svgElement.classList.add("Package");
-		this.svgElement.innerHTML=
-`
-<animateTransform 
-	attributeName="transform"
-    type="translate"
-    from="${origin.x} ${origin.y}"
-    to="${target.x} ${target.y}"
-    dur="${Math.sqrt((target.x-origin.x)**2+(target.y-origin.y)**2)/speed}s"
-    repeatCount="1"
-    begin="indefinite"
-    fill="freeze"/>
-`;
+
+		this.target=target;
 
 		for(let attr of ["team","resources"])
 		{
@@ -275,15 +388,11 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		}
 		this.team=team;
 		this.resources=resources;
+		this.direction=direction;
+		this.distance=distance;
+		this.speed=speed;
 
 		this.course.addItem(this);
-		let animate = this.svgElement.children[0];
-		animate.addEventListener("end",()=>
-		{
-			target.hit(this);
-			this.destroy();
-		});
-		animate.beginElement();
 	}
 });
 ResourceWar.Cursor=µ.Class(µ.gs.Component.Course.Svg.Item,{
@@ -291,7 +400,7 @@ ResourceWar.Cursor=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	{
 		let {team=null}=param;
 
-		param.name="cursor "+team;
+		param.name="cursor";
 		param.tagName="use";
 
 		this.mega(param);
@@ -323,6 +432,12 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 				},
 				1:{
 					action:"setTarget"
+				},
+				4:{
+					action:"clearTargets"
+				},
+				5:{
+					action:"clearTargets"
 				},
 				null:{
 					action:"action"
@@ -398,6 +513,19 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 				if(this.selected&&this.active.team!=this.selected)
 				{
 					this.selected.setTarget(this.active);
+				}
+			}
+		},
+		clearTargets(event)
+		{
+			if(this._acceptButton(event))
+			{
+				for(let item of this.course.items)
+				{
+					if(item.name=="generator"&&item.team==this.team)
+					{
+						item.setTarget(null);
+					}
 				}
 			}
 		}

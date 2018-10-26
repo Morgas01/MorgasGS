@@ -41,7 +41,8 @@ let loadGame=function(name)
 		gameClass=µ.gs.Game.Remote.implement(name,"games/embeddedGameLoader.html?game="+name);
 	}
 	system.setGame(new gameClass());
-}
+	history.pushState({game:name},name,"?game="+name);
+};
 
 document.getElementById("goBtn").addEventListener("click",function()
 {

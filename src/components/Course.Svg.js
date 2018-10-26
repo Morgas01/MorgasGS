@@ -54,7 +54,7 @@
 		},
 		removeItem(item)
 		{
-			this.mega();
+			this.mega(item);
 			this.domElement.removeChild(item.svgElement);
 		},
 		createElement(tagName)
