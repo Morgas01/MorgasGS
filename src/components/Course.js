@@ -41,10 +41,13 @@
 	 * Basic 2D Item for Course
 	 */
 	Component.Course.Item=µ.Class({
-		constructor:function({course,x=0,y=0,name=""}={})
+		constructor:function({element,x=0,y=0,name=""}={})
 		{
-			this.course=course;
-			if(!this.course) throw new RangeError("#Course.Item:001 no course present");
+			/** element that is actually visible (dom/svg/etc)*/
+			this.element=element;
+
+			if(element) Component.Course.Item._references.set(this.element,this);
+
 			this.x=x;
 			this.y=y;
 			this.name=name;
@@ -60,10 +63,11 @@
 		},
 		destroy()
 		{
-			this.course.removeItem(this);
 			this.mega();
 		}
 	});
+	/** keep back references from elements to instances */
+	Component.Course.Item._references=new WeakMap();
 
 	SMOD("gs.Comp.Course",Component.Course);
 

@@ -1755,6 +1755,7 @@
 
 			this.update();
 		},
+		/** updates the items from data */
 		update()
 		{
 			while(this.domElement.firstChild) this.domElement.removeChild(this.domElement.firstChild);
@@ -1789,8 +1790,8 @@
 		actions:{
 			move(stick)
 			{
-				let absX=Math.abs(stick.x);
-				let absY=Math.abs(stick.y);
+				let absX=Math.abs(stick.value.x);
+				let absY=Math.abs(stick.value.y);
 
 				let method;
 				if(absX<33&&absY<33)
@@ -1800,11 +1801,11 @@
 				}
 				else if(absX>=absY)
 				{
-					method=stick.x<0?this.moveLeft:this.moveRight;
+					method=stick.value.x<0?this.moveLeft:this.moveRight;
 				}
 				else
 				{
-					method=stick.y<0?this.moveDown:this.moveUp;
+					method=stick.value.y<0?this.moveDown:this.moveUp;
 				}
 
 				if(method!=this.movement.method)
@@ -1927,10 +1928,13 @@
 	 * Basic 2D Item for Course
 	 */
 	Component.Course.Item=µ.Class({
-		constructor:function({course,x=0,y=0,name=""}={})
+		constructor:function({element,x=0,y=0,name=""}={})
 		{
-			this.course=course;
-			if(!this.course) throw new RangeError("#Course.Item:001 no course present");
+			/** element that is actually visible (dom/svg/etc)*/
+			this.element=element;
+
+			if(element) Component.Course.Item._references.set(this.element,this);
+
 			this.x=x;
 			this.y=y;
 			this.name=name;
@@ -1946,10 +1950,11 @@
 		},
 		destroy()
 		{
-			this.course.removeItem(this);
 			this.mega();
 		}
 	});
+	/** keep back references from elements to instances */
+	Component.Course.Item._references=new WeakMap();
 
 	SMOD("gs.Comp.Course",Component.Course);
 
@@ -1968,20 +1973,20 @@
 	Course.Svg=µ.Class(Course,{
 		constructor:function(param={})
 		{
-			let svg=this.domElement=document.createElementNS(Course.Svg.XMLNS,"svg");
+			if(!param.domElement) param.domElement=Course.Svg.createElement("svg");
 
 			this.mega(param);
 
-			this.defs=document.createElementNS(Course.Svg.XMLNS,"defs");
-			svg.appendChild(this.defs);
+			this.defs=Course.Svg.createElement("defs");
+			this.domElement.appendChild(this.defs);
 
 			for(let attr of ["version","baseProfile","width","height","viewBox","preserveAspectRatio"])
 			{
 				Object.defineProperty(this,attr,{
 					configurable:true,
 					enumerable:true,
-					get:()=>svg.getAttribute(attr),
-					set:value=>svg.setAttribute(attr,value)
+					get:()=>this.domElement.getAttribute(attr),
+					set:value=>this.domElement.setAttribute(attr,value)
 				});
 			};
 
@@ -2001,52 +2006,56 @@
 			}=param);
 
 		},
-		addDef(svgElement)
+		addDef(element)
 		{
-			this.defs.appendChild(svgElement);
+			this.defs.appendChild(element);
 		},
 		addItem(item)
 		{
 			this.mega(item);
-			this.domElement.appendChild(item.svgElement);
+			this.domElement.appendChild(item.element);
 		},
 		removeItem(item)
 		{
 			this.mega(item);
-			this.domElement.removeChild(item.svgElement);
+			this.domElement.removeChild(item.element);
 		},
-		createElement(tagName)
-		{
-			return document.createElementNS(Course.Svg.XMLNS,tagName);
-		}
 	});
 	Course.Svg.VERSION=1.2;
 	Course.Svg.BASE_PROFILE="full";
 	Course.Svg.XMLNS="http://www.w3.org/2000/svg";
-	Course.Svg.createElement=Course.Svg.prototype.createElement;
+	Course.Svg.createElement=function(tagName,attributes={})
+	{
+		let element=document.createElementNS(Course.Svg.XMLNS,tagName);
+
+		for(let [attr,value] of Object.entries(attributes))
+		{
+			element.setAttribute(attr,value);
+		}
+		return element;
+	};
 
 	Course.Svg.Item=µ.Class(Course.Item,{
 		constructor:function(param={})
 		{
-			let {tagName="g"}=param;
+			if(!param.element) param.element=Course.Svg.createElement(param.tagName||"g",param.attributes)
 			this.mega(param);
-			this.svgElement=this.createElement(tagName);
+
+			this.autoUpdate=false;
+
 			this.setPosition();
+
+			this.autoUpdate=param.autoUpdate!==false;
 		},
 		setPosition(x,y)
 		{
 			this.mega(x,y);
-			this.setAttribute("transform",`translate(${this.x} ${this.y})`);
+			if(this.autoUpdate) this.update();
 		},
-		getAttribute(name,value)
+		update()
 		{
-			return this.svgElement.getAttribute(name,value)
-		},
-		setAttribute(name,value)
-		{
-			return this.svgElement.setAttribute(name,value)
-		},
-		createElement:Course.Svg.createElement
+			this.element.setAttribute("transform",`translate(${this.x} ${this.y})`);
+		}
 	});
 
 	SMOD("gs.Comp.Course.Svg",Course.Svg);

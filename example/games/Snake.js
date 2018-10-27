@@ -58,7 +58,7 @@ Snake.Player=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		this.mega({name:"player",x:50,y:50});
 		this.movementKeys=[];
 		this.parts=[];
-		this.svgElement.innerHTML='<rect width="5" height="5" fill="red" stroke="black" stroke-width="0.5" />';
+		this.element.innerHTML='<rect width="5" height="5" fill="red" stroke="black" stroke-width="0.5" />';
 		this.direction=null;
 		this.setDirection(Math.random(),Math.random());
 		this.velocity=.04; // unit per millisecond
@@ -110,7 +110,7 @@ Snake.Player=µ.Class(µ.gs.Component.Course.Svg.Item,{
 			let keyTime=key.time;
 			while(partIndex<this.parts.length&&time-(partIndex+1)*this.partDelay>keyTime)
 			{
-				this.parts[partIndex].update(time,time-(partIndex+1)*this.partDelay,this.movementKeys[i-1]);
+				this.parts[partIndex].updateTime(time,time-(partIndex+1)*this.partDelay,this.movementKeys[i-1]);
 				partIndex++;
 			}
 			if(partIndex>=this.parts.length)
@@ -123,7 +123,7 @@ Snake.Player=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		let lastKey=this.movementKeys[this.movementKeys.length-1];
 		while(partIndex<this.parts.length)
 		{
-			this.parts[partIndex].update(time,time-(partIndex+1)*this.partDelay,lastKey);
+			this.parts[partIndex].updateTime(time,time-(partIndex+1)*this.partDelay,lastKey);
 			partIndex++;
 		}
 	},
@@ -131,7 +131,7 @@ Snake.Player=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	{
 		let part=new Snake.Part(this);
 		this.parts.unshift(part);
-		this.svgElement.insertBefore(part.svgElement,this.svgElement.lastChild);
+		this.element.insertBefore(part.element,this.element.lastChild);
 	}
 });
 let partColorCounter=22;
@@ -139,10 +139,10 @@ Snake.Part=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	constructor:function(player)
 	{
 		this.mega({name:"part"});
-		this.svgElement.innerHTML='<rect width="5" height="5" fill="hsl('+((partColorCounter++)*10)%361+',100%,50%)" />';
+		this.element.innerHTML='<rect width="5" height="5" fill="hsl('+((partColorCounter++)*10)%361+',100%,50%)" />';
 		this.player=player;
 	},
-	update(timeNow,partTime,{x,y,direction,time}={
+	updateTime(timeNow,partTime,{x,y,direction,time}={
 		x:this.player.x,
 		y:this.player.y,
 		direction:this.player.direction,

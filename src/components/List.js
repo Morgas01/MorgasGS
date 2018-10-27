@@ -32,6 +32,7 @@
 
 			this.update();
 		},
+		/** updates the items from data */
 		update()
 		{
 			while(this.domElement.firstChild) this.domElement.removeChild(this.domElement.firstChild);
@@ -66,8 +67,8 @@
 		actions:{
 			move(stick)
 			{
-				let absX=Math.abs(stick.x);
-				let absY=Math.abs(stick.y);
+				let absX=Math.abs(stick.value.x);
+				let absY=Math.abs(stick.value.y);
 
 				let method;
 				if(absX<33&&absY<33)
@@ -77,11 +78,11 @@
 				}
 				else if(absX>=absY)
 				{
-					method=stick.x<0?this.moveLeft:this.moveRight;
+					method=stick.value.x<0?this.moveLeft:this.moveRight;
 				}
 				else
 				{
-					method=stick.y<0?this.moveDown:this.moveUp;
+					method=stick.value.y<0?this.moveDown:this.moveUp;
 				}
 
 				if(method!=this.movement.method)

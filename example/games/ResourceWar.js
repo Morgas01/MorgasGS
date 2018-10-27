@@ -40,7 +40,7 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 
 		this._createSymbols();
 
-		this.loadLevel("test")
+		this.loadLevel("tutorial_2")
 		//.then(()=>this.setPause(false)); // set game pause state
 	},
 	setPause(value)
@@ -55,22 +55,20 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 	},
 	_createSymbols()
 	{
-		let generatorSymbol=this.course.createElement("symbol");
+		let generatorSymbol=µ.gs.Component.Course.Svg.createElement("symbol",{id:"generator"});
 		generatorSymbol.innerHTML=
 `
 <circle r="3" cx="3" cy="3" class="generator-outer"></circle>
 <circle r="1.5" cx="3" cy="3" class="generator-inner"></circle>
 `		;
-		generatorSymbol.id="generator";
 		this.course.domElement.appendChild(generatorSymbol);
-		let cursorSymbol=this.course.createElement("symbol");
+		let cursorSymbol=µ.gs.Component.Course.Svg.createElement("symbol",{id:"cursor"});
 		cursorSymbol.innerHTML=
 `
 <circle r="2.8" cx="3" cy="3" class="cursor">
 	<animate attributeName="r" dur="2" values="2.8;1.4;2.8" repeatCount="indefinite" keyTimes="0;.75;1"></animate>
 </circle>
 `		;
-		cursorSymbol.id="cursor";
 		this.course.domElement.appendChild(cursorSymbol);
 	},
 	loadLevel(name)
@@ -181,13 +179,14 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		{
 			let speed=Math.max(5,generator.packageSpeed-packageResources*generator.packageSpeedFraction);
 			generator.resources-=packageResources;
-			new ResourceWar.Package({
+			let pack=new ResourceWar.Package({
 				generator:generator,
 				speed:speed,
 				resources:packageResources,
 				movement:this.getPackageMovement(generator)
 			});
-			generator.updateText();
+			generator.update();
+			this.course.addItem(pack);
 		}
 	},
 	updateGenerator(generator)
@@ -230,7 +229,8 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 					generator.nextGenerationTime=this.time+generator.generationRate;
 				}
 			}
-			generator.updateText();
+			generator.update();
+			this.course.removeItem(packageItem);
 			packageItem.destroy();
 		}
 		else
@@ -240,6 +240,7 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 	}
 });
 ResourceWar.loadedLevels=new Map();
+
 ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	generatorID:0,
 	constructor:function(param={})
@@ -250,21 +251,21 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 
 		this.mega(param);
 
-		this.svgElement.classList.add("generator");
-		this.svgElement.dataset.id=this.generatorID;
-		this.svgElement.innerHTML=
+		this.element.classList.add("generator");
+		this.element.dataset.id=this.generatorID
+		this.element.innerHTML=
 `
 <use href="#generator"/>
 <text y="1.8em"/>
 `;
-		this.text=this.svgElement.children[1];
+		this.text=this.element.children[1];
 
 		for(let attr of ["team","resources","generation","max"])
 		{
 			let val=null; // prevent string conversion
 			Object.defineProperty(this,attr,{
 				get:()=>val,
-				set:(t)=>val=this.svgElement.dataset[attr]=t
+				set:(t)=>val=this.element.dataset[attr]=t
 			});
 		}
 		({
@@ -301,10 +302,11 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		this.nextPackageTime=0;
 		this.target=null;
 
-		this.updateText();
+		this.update();
 	},
-	updateText()
+	update()
 	{
+		this.mega();
 		let textPos;
 		if(this.resources<10)
 		{
@@ -338,7 +340,7 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		{
 			this.resources+=Math.min(this.generation,this.max-this.resources);
 			this.nextGenerationTime+=this.generationRate;
-			this.updateText();
+			this.update();
 		}
 	}
 });
@@ -348,7 +350,6 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		let {
 			generator,
 			generator:{
-				course,
 				team=null,
 				target,
 				x,
@@ -363,18 +364,17 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		}=param;
 
 		this.mega({
-			course,
 			name:"package",
 			tagName:"circle",
 			x,
 			y
 		});
 
-		this.setAttribute("r",1+resources/8);
-		this.setAttribute("cx","3");
-		this.setAttribute("cy","3");
+		this.element.setAttribute("r",1+resources/8);
+		this.element.setAttribute("cx","3");
+		this.element.setAttribute("cy","3");
 
-		this.svgElement.classList.add("Package");
+		this.element.classList.add("Package");
 
 		this.target=target;
 
@@ -383,7 +383,7 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 			let val=null; // prevent string conversion
 			Object.defineProperty(this,attr,{
 				get:()=>val,
-				set:(t)=>val=this.svgElement.dataset[attr]=t
+				set:(t)=>val=this.element.dataset[attr]=t
 			});
 		}
 		this.team=team;
@@ -391,8 +391,6 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		this.direction=direction;
 		this.distance=distance;
 		this.speed=speed;
-
-		this.course.addItem(this);
 	}
 });
 ResourceWar.Cursor=µ.Class(µ.gs.Component.Course.Svg.Item,{
@@ -402,16 +400,15 @@ ResourceWar.Cursor=µ.Class(µ.gs.Component.Course.Svg.Item,{
 
 		param.name="cursor";
 		param.tagName="use";
-
+		param.attributes={href:"#cursor"};
 		this.mega(param);
 
-		this.setAttribute("href","#cursor");
 		for(let attr of ["team"])
 		{
 			let val=null; // prevent string conversion
 			Object.defineProperty(this,attr,{
 				get:()=>val,
-				set:(t)=>val=this.svgElement.dataset[attr]=t
+				set:(t)=>val=this.element.dataset[attr]=t
 			});
 		}
 		this.team=team;
@@ -447,7 +444,7 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		this.course=param.course;
 		this.active=null;
 		this.team=param.team;
-		this.cursor=new ResourceWar.Cursor({course:this.course,team:param.team});
+		this.cursor=new ResourceWar.Cursor({team:param.team});
 		this.course.addItem(this.cursor);
 		this.setActive(param.active);
 	},
@@ -497,12 +494,12 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		{
 			if(this._acceptButton(event))
 			{
-				if(this.active.svgElement.dataset.team!=this.team) return false;
+				if(this.active.element.dataset.team!=this.team) return false;
 				if(this.selected!=null)
 				{
-					this.selected.svgElement.classList.remove("selected");
+					this.selected.element.classList.remove("selected");
 				}
-				this.active.svgElement.classList.add("selected");
+				this.active.element.classList.add("selected");
 				this.selected=this.active;
 			}
 		},
