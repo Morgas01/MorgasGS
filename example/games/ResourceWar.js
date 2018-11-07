@@ -38,6 +38,9 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		this.lastTime=null;
 		this.movementRegister=SC.mapRegister();
 
+		this.player=new ResourceWar.Player({team:1});
+		this.npcs=[];
+
 		this._createSymbols();
 
 		this.loadLevel("tutorial_2")
@@ -88,19 +91,8 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 				this.course.addItem(item);
 			}
 
-			/*
-			let item1=new ResourceWar.Generator({course:this.course,team:1,x:5,y:5});
-			let item2=new ResourceWar.Generator({course:this.course,x:80,y:70});
-			this.course.addItems([
-				item1,
-				item2,
-				new ResourceWar.Generator({course:this.course,x:60,y:50,resources:10}),
-				new ResourceWar.Generator({course:this.course,x:60,y:70}),
-				new ResourceWar.Generator({course:this.course,x:80,y:50})
-			]);*/
-
-
-			this.player=new ResourceWar.Player({course:this.course,team:1,active:firstActive});
+			this.player.setCourse(this.course,firstActive);
+			this.npcs.push(new ResourceWar.Npc({team:2}))
 		});
 	},
 	consumeControllerChange(event)
@@ -120,11 +112,13 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		this.lastTime=timeNow;
 		this.time+=diff;
 
+		let generators=[];
 		for(let item of this.course.items)
 		{
 			switch (item.name)
 			{
 				case "generator":
+					generators.push(item);
 					this.updateGenerator(item);
 					break;
 				case "package":
@@ -135,6 +129,10 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 				default:
 					throw new RangeError("unknown item in Course");
 			}
+		}
+		for (let npc of this.npcs)
+		{
+			this.updateNpc(npc,generators);
 		}
 	},
 	setActive(generator)
@@ -226,6 +224,7 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 				{
 					generator.resources=-generator.resources;
 					generator.team=packageItem.team;
+					generator.setTarget(null);
 					generator.nextGenerationTime=this.time+generator.generationRate;
 				}
 			}
@@ -236,6 +235,13 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		else
 		{
 			packageItem.setPosition(packageItem.x+packageItem.direction.x*travelDistance,packageItem.y+packageItem.direction.y*travelDistance);
+		}
+	},
+	updateNpc(npc,generators)
+	{
+		if(npc.nextActionTime<this.time)
+		{
+			npc.action(generators);
 		}
 	}
 });
@@ -348,7 +354,6 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	constructor:function(param={})
 	{
 		let {
-			generator,
 			generator:{
 				team=null,
 				target,
@@ -445,8 +450,12 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		this.active=null;
 		this.team=param.team;
 		this.cursor=new ResourceWar.Cursor({team:param.team});
+	},
+	setCourse(course,active)
+	{
+		this.course=course;
 		this.course.addItem(this.cursor);
-		this.setActive(param.active);
+		this.setActive(active);
 	},
 	setActive(generator)
 	{
@@ -526,6 +535,41 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 				}
 			}
 		}
+	}
+});
+ResourceWar.Npc=µ.Class({
+	constructor:function({team,delay=3000,interval=2000}={})
+	{
+		this.team=team;
+		this.interval=interval;
+		this.nextActionTime=delay;
+	},
+	action(generators)
+	{
+		this.nextActionTime+=this.interval;
+		let myBiggest=null;
+		let easyTarget=null;
+		for (let generator of generators)
+		{
+			if(generator.team===this.team)
+			{
+				if(generator.target!=null)
+				{
+					if(generator.target.team==this.team) generator.setTarget(null);
+					else continue;
+				}
+
+				if(!myBiggest||myBiggest.resources<generator.resources)
+				{
+					myBiggest=generator;
+				}
+			}
+			else if(!easyTarget||easyTarget.team!=null&&generator.team==null||easyTarget.resources>generator.resources)
+			{
+				easyTarget=generator;
+			}
+		}
+		if(myBiggest&&easyTarget) myBiggest.setTarget(easyTarget);
 	}
 });
 
