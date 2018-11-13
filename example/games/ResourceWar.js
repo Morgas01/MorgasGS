@@ -1,29 +1,31 @@
 
 let SC=µ.shortcut({
 	rs:"rescope",
-	mapRegister:"mapRegister",
-	rq:"request"
+	rq:"request",
+	remove:"array.remove"
 });
 
-let ResourceWarGameWrapper=µ.Class(µ.gs.Game,{
+let ResourceWar=µ.Class(µ.gs.Game,{
 	name:"ResourceWar",
 	constructor:function()
 	{
 		this.mega();
-		this.resourceWar=new ResourceWar();
-		this.domElement.appendChild(this.resourceWar.domElement);
+		this.map=new ResourceWar.Map();
+		this.domElement.appendChild(this.map.domElement);
+
+		this.map.loadLevel("test");
 	},
 	onControllerChange(event)
 	{
-		this.resourceWar.consumeControllerChange(event);
+		this.map.consumeControllerChange(event);
 	},
 	setPause(value)
 	{
 		this.mega(value);
-		this.resourceWar.setPause(value);
+		this.map.setPause(value);
 	}
 });
-let ResourceWar=µ.Class(µ.gs.Component,{
+ResourceWar.Map=µ.Class(µ.gs.Component,{
 	constructor:function()
 	{
 		µ.util.function.rescope.all(this,["loop"]);
@@ -33,18 +35,15 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		this.pause=true;
 		this.course=new µ.gs.Component.Course.Svg();
 		this.domElement=this.course.domElement;
+		this._createSymbols();
+		this.generators=[];
+		this.packages=[];
 
 		this.loopId=null;
 		this.lastTime=null;
-		this.movementRegister=SC.mapRegister();
 
-		this.player=new ResourceWar.Player({team:1});
+		this.player=new ResourceWar.Player({team:1,map:this});
 		this.npcs=[];
-
-		this._createSymbols();
-
-		this.loadLevel("tutorial_2")
-		//.then(()=>this.setPause(false)); // set game pause state
 	},
 	setPause(value)
 	{
@@ -80,19 +79,29 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 		.then(json=>
 		{
 			let firstActive=null;
+			let otherTeams=new Set();
 			for(let generatorJson of json.generators)
 			{
 				generatorJson.course=this.course;
 				let item=new ResourceWar.Generator(generatorJson);
-				if(item.team==1)
+				if(item.team===1)
 				{
 					firstActive=item;
 				}
-				this.course.addItem(item);
+				else if (item.team!=null)
+				{
+					otherTeams.add(item.team);
+				}
+				this.generators.push(item);
 			}
+			this.course.addItems(this.generators);
 
-			this.player.setCourse(this.course,firstActive);
-			this.npcs.push(new ResourceWar.Npc({team:2}))
+			this.course.addItem(this.player.cursor);
+			this.player.setActive(firstActive);
+			for (let team of otherTeams)
+			{
+				this.npcs.push(new ResourceWar.Npc({team:team}));
+			}
 		});
 	},
 	consumeControllerChange(event)
@@ -108,141 +117,34 @@ let ResourceWar=µ.Class(µ.gs.Component,{
 			this.lastTime=timeNow;
 			return;
 		}
-		let diff=timeNow-this.lastTime;
+		let timeDiff=timeNow-this.lastTime;
+		if(timeDiff>250) timeDiff=250; // no long jumps
 		this.lastTime=timeNow;
-		this.time+=diff;
+		this.time+=timeDiff;
 
-		let generators=[];
-		for(let item of this.course.items)
+		for(let pack of this.packages)
 		{
-			switch (item.name)
-			{
-				case "generator":
-					generators.push(item);
-					this.updateGenerator(item);
-					break;
-				case "package":
-					this.updatePackage(item,diff);
-				case "cursor":
-					// od nothing
-					break;
-				default:
-					throw new RangeError("unknown item in Course");
-			}
+			pack.action(this,timeDiff);
 		}
-		for (let npc of this.npcs)
+		for(let npc of this.npcs)
 		{
-			this.updateNpc(npc,generators);
+			npc.action(this,timeDiff);
+		}
+		for(let generator of this.generators)
+		{
+			generator.action(this,timeDiff);
 		}
 	},
-	setActive(generator)
+	addPackage(packageItem)
 	{
-		if(this.active)
-		{
-			this.active.svgElement.classList.remove("active");
-		}
+		this.packages.push(packageItem);
+		this.course.addItem(packageItem);
 	},
-	getPackageMovement(generator)
+	removePackage(packageItem)
 	{
-		let movement=this.movementRegister.get(generator).get(generator.target);
-		if(!movement)
-		{
-			let dx=generator.target.x-generator.x;
-			let dy=generator.target.y-generator.y;
-			let distance=Math.sqrt(dx**2+dy**2);
-			movement={
-				direction:{
-					x:dx/distance,
-					y:dy/distance
-				},
-				distance:distance
-			};
-			this.movementRegister.get(generator).set(generator.target,movement);
-
-			let reverseMovement={
-				direction:{
-					x:-movement.direction.x,
-					y:-movement.direction.y
-				},
-				distance:movement.distance
-			};
-			this.movementRegister.get(generator.target).set(generator,reverseMovement);
-		}
-		return movement
-	},
-	createPackage(generator)
-	{
-		let packageResources=Math.ceil(generator.resources*generator.packageRatio);
-		if(packageResources>0)
-		{
-			let speed=Math.max(5,generator.packageSpeed-packageResources*generator.packageSpeedFraction);
-			generator.resources-=packageResources;
-			let pack=new ResourceWar.Package({
-				generator:generator,
-				speed:speed,
-				resources:packageResources,
-				movement:this.getPackageMovement(generator)
-			});
-			generator.update();
-			this.course.addItem(pack);
-		}
-	},
-	updateGenerator(generator)
-	{
-		if(generator.nextGenerationTime<this.time)
-		{
-			generator.generate();
-		}
-
-		if(generator.nextPackageTime<this.time&&generator.target!=null&&generator.resources>=generator.min)
-		{
-			this.createPackage(generator);
-			if(generator.nextPackageTime+generator.packageRate<this.time)
-			{
-				generator.nextPackageTime=this.time;
-			}
-			generator.nextPackageTime+=generator.packageRate;
-		}
-	},
-	updatePackage(packageItem,timeDiff)
-	{
-		let travelDistance=packageItem.speed*timeDiff/1000;
-		packageItem.distance-=travelDistance;
-		if(packageItem.distance<=0)
-		{
-			//hit target
-
-			let generator = packageItem.target;
-			if(generator.team===packageItem.team)
-			{
-				generator.resources+=packageItem.resources;
-			}
-			else
-			{
-				generator.resources-=packageItem.resources;
-				if(generator.resources<=0)
-				{
-					generator.resources=-generator.resources;
-					generator.team=packageItem.team;
-					generator.setTarget(null);
-					generator.nextGenerationTime=this.time+generator.generationRate;
-				}
-			}
-			generator.update();
-			this.course.removeItem(packageItem);
-			packageItem.destroy();
-		}
-		else
-		{
-			packageItem.setPosition(packageItem.x+packageItem.direction.x*travelDistance,packageItem.y+packageItem.direction.y*travelDistance);
-		}
-	},
-	updateNpc(npc,generators)
-	{
-		if(npc.nextActionTime<this.time)
-		{
-			npc.action(generators);
-		}
+		this.course.removeItem(packageItem);
+		SC.remove(this.packages,packageItem);
+		packageItem.destroy();
 	}
 });
 ResourceWar.loadedLevels=new Map();
@@ -258,7 +160,7 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		this.mega(param);
 
 		this.element.classList.add("generator");
-		this.element.dataset.id=this.generatorID
+		this.element.dataset.id=this.generatorID;
 		this.element.innerHTML=
 `
 <use href="#generator"/>
@@ -286,7 +188,17 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 			 * time between generations
 			 * @type {number}
 			 */
-			generationRate:this.generationRate=1000,
+			generationRate:this.generationRate=2000,
+			/**
+			 * minimum time between generations
+			 * @type {number}
+			 */
+			generationMinRate:this.generationMinRate=this.generationRate/4,
+			/**
+			 * amount of time adjustment for generation when receiving a package
+			 * @type {Number}
+			 */
+			generationTimeAdjust:this.generationTimeAdjust=(this.generationRate-this.generationMinRate)/5,
 			/**
 			 * max resources
 			 * @type {number}
@@ -296,14 +208,15 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 			 * min resources to create packages
 			 * @type {number}
 			 */
-			min:this.min=3,
+			min:this.min=5,
 
-			packageRate:this.packageRate=500,
+			packageRate:this.packageRate=1000,
 			packageRatio:this.packageRatio=0.1,
-			packageSpeed:this.packageSpeed=20,
+			packageSpeed:this.packageSpeed=30,
 			packageSpeedFraction:this.packageSpeedFraction=0.5
 		}=param);
 
+		this.lastGenerationTime=0;
 		this.nextGenerationTime=0;
 		this.nextPackageTime=0;
 		this.target=null;
@@ -331,7 +244,7 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	},
 	setTarget(target)
 	{
-		if(this.target!=target&&target!=this)
+		if(this.target!==target&&target!==this)
 		{
 			this.target=target;
 		}
@@ -345,8 +258,87 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 		if(this.team!=null&&this.resources<this.max)
 		{
 			this.resources+=Math.min(this.generation,this.max-this.resources);
+			this.lastGenerationTime=this.nextGenerationTime;
 			this.nextGenerationTime+=this.generationRate;
 			this.update();
+		}
+	},
+	canFirePackage()
+	{
+		return this.resources>this.min;
+	},
+	createPackage(map,target)
+	{
+		if(this.canFirePackage())
+		{
+			let packageResources=Math.ceil(this.resources*this.packageRatio);
+			let speed=Math.max(10,this.packageSpeed-packageResources*this.packageSpeedFraction);
+			this.resources-=packageResources;
+			let packageItem=new ResourceWar.Package({
+				generator:this,
+				target:target,
+				speed:speed,
+				resources:packageResources,
+				attack:packageResources
+			});
+			this.update();
+			map.addPackage(packageItem);
+		}
+	},
+	receivePackage(map,packageItem)
+	{
+		if(this.team===packageItem.team)
+		{
+			this.resources+=packageItem.resources;
+		}
+		else
+		{
+			this.resources-=packageItem.attack;
+			if(this.resources<=0)
+			{
+				this.resources=-this.resources;
+				this.team=packageItem.team;
+				this.setTarget(null);
+				this.nextGenerationTime=map.time+this.generationRate;
+			}
+		}
+		this.adjustGenerationTime(packageItem.team);
+		this.update();
+		map.removePackage(packageItem);
+	},
+	adjustGenerationTime(team)
+	{
+		if(team!==this.team) this.nextGenerationTime+=this.generationTimeAdjust;
+		else
+		{
+			this.nextGenerationTime-=this.generationTimeAdjust;
+			if(this.nextGenerationTime-this.lastGenerationTime<this.generationMinRate)
+			{
+				this.nextGenerationTime=this.lastGenerationTime+this.generationMinRate;
+			}
+		}
+	},
+	action(map,timeDiff)
+	{
+		if(this.nextGenerationTime<map.time)
+		{
+			this.generate();
+		}
+
+		let target=this.target;
+		if(this.team===map.player.team&&map.player.overrideTargets&&map.player.active!==this)
+		{
+			target=map.player.active;
+		}
+
+		if(this.nextPackageTime<map.time&&target!=null&&this.canFirePackage())
+		{
+			this.createPackage(map,target);
+			if(this.nextPackageTime+this.packageRate<map.time)
+			{
+				this.nextPackageTime=map.time;
+			}
+			this.nextPackageTime+=this.packageRate;
 		}
 	}
 });
@@ -354,18 +346,16 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	constructor:function(param={})
 	{
 		let {
+			generator,
 			generator:{
 				team=null,
-				target,
 				x,
 				y
 			},
+			target,
 			speed=20,
 			resources,
-			movement:{
-				direction,
-				distance
-			}
+			attack
 		}=param;
 
 		this.mega({
@@ -391,11 +381,42 @@ ResourceWar.Package=µ.Class(µ.gs.Component.Course.Svg.Item,{
 				set:(t)=>val=this.element.dataset[attr]=t
 			});
 		}
+		this.generator=generator;
 		this.team=team;
 		this.resources=resources;
-		this.direction=direction;
-		this.distance=distance;
+		this.attack=attack;
 		this.speed=speed;
+
+		this.update();
+	},
+	_calcMovement()
+	{
+		let dx=this.target.x-this.x;
+		let dy=this.target.y-this.y;
+		let distance=Math.sqrt(dx**2+dy**2);
+		let movement={
+			direction:{
+				x:dx/distance,
+				y:dy/distance
+			},
+			distance:distance
+		};
+		return movement
+	},
+	action(map,timeDiff)
+	{
+		let travelDistance=this.speed*timeDiff/1000;
+		let movement=this._calcMovement();
+		movement.distance-=travelDistance;
+		if(movement.distance<=0)
+		{
+			//hit target
+			this.target.receivePackage(map,this);
+		}
+		else
+		{
+			this.setPosition(this.x+movement.direction.x*travelDistance,this.y+movement.direction.y*travelDistance);
+		}
 	}
 });
 ResourceWar.Cursor=µ.Class(µ.gs.Component.Course.Svg.Item,{
@@ -439,23 +460,24 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 					action:"clearTargets"
 				},
 				5:{
-					action:"clearTargets"
+					action:"targetOverride"
 				},
 				null:{
 					action:"action"
 				}
 			}
 		}]]));
-		this.course=param.course;
+		this.map=null;
 		this.active=null;
 		this.team=param.team;
 		this.cursor=new ResourceWar.Cursor({team:param.team});
+		this.overrideTargets=false;
+		if(param.map) this.setMap(param.map)
 	},
-	setCourse(course,active)
+	setMap(map)
 	{
-		this.course=course;
-		this.course.addItem(this.cursor);
-		this.setActive(active);
+		this.map=map;
+		this.map.course.addItem(this.cursor);
 	},
 	setActive(generator)
 	{
@@ -470,22 +492,17 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 			let angle=Math.atan2(-event.value.y,event.value.x);
 			let distance=null;
 			let nextTarget=null;
-			for(let item of this.course.items)
+			for(let item of this.map.generators)
 			{
-				if(item==this.active||!(item instanceof ResourceWar.Generator))
-				{
-					continue;
-				}
+				if(item===this.active) continue;
 
 				let relativeX=item.x-this.active.x;
 				let relativeY=item.y-this.active.y;
 				let itemAngle=Math.atan2(relativeY,relativeX);
 				let diff=Math.abs(angle-itemAngle);
 				if(diff>Math.PI) diff=Math.PI*2-diff;
-				if(diff>Math.PI/4)
-				{
-					continue;
-				}
+
+				if(diff>Math.PI/4) continue;
 
 				let itemDistance=Math.sqrt(relativeX**2+relativeY**2);
 				if(distance==null||itemDistance<distance)
@@ -503,7 +520,7 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		{
 			if(this._acceptButton(event))
 			{
-				if(this.active.element.dataset.team!=this.team) return false;
+				if(this.active.element.dataset.team!==this.team) return false;
 				if(this.selected!=null)
 				{
 					this.selected.element.classList.remove("selected");
@@ -516,7 +533,7 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		{
 			if(this._acceptButton(event))
 			{
-				if(this.selected&&this.active.team!=this.selected)
+				if(this.selected&&this.active.team!==this.selected)
 				{
 					this.selected.setTarget(this.active);
 				}
@@ -526,14 +543,18 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		{
 			if(this._acceptButton(event))
 			{
-				for(let item of this.course.items)
+				for(let item of this.map.generators)
 				{
-					if(item.name=="generator"&&item.team==this.team)
+					if(item.team===this.team)
 					{
 						item.setTarget(null);
 					}
 				}
 			}
+		},
+		targetOverride(event)
+		{
+			this.overrideTargets=event.value.pressed;
 		}
 	}
 });
@@ -544,18 +565,20 @@ ResourceWar.Npc=µ.Class({
 		this.interval=interval;
 		this.nextActionTime=delay;
 	},
-	action(generators)
+	action(map,timeDiff)
 	{
+		if(this.nextActionTime>map.time) return;
+
 		this.nextActionTime+=this.interval;
 		let myBiggest=null;
 		let easyTarget=null;
-		for (let generator of generators)
+		for (let generator of map.generators)
 		{
 			if(generator.team===this.team)
 			{
 				if(generator.target!=null)
 				{
-					if(generator.target.team==this.team) generator.setTarget(null);
+					if(generator.target.team===this.team) generator.setTarget(null);
 					else continue;
 				}
 
@@ -573,4 +596,4 @@ ResourceWar.Npc=µ.Class({
 	}
 });
 
-µ.gs.Game.Embed(ResourceWarGameWrapper);
+µ.gs.Game.Embed(ResourceWar);
