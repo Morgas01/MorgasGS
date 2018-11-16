@@ -51,9 +51,9 @@
 		},
 		keyListener(event)
 		{
-			if(HMOD("gs.Controller.Keyboard"))
+			if(HMOD("gs.Con.Keyboard"))
 			{
-				let KeyCon=GMOD("gs.Controller.Keyboard");
+				let KeyCon=GMOD("gs.Con.Keyboard");
 				let eventConsumed=false;
 				for(let con of this.controllers)
 				{
@@ -88,9 +88,9 @@
 		{
 			if(this.poll!==null) return false;
 
-			if(HMOD("gs.Controller.Gamepad"))
+			if(HMOD("gs.Con.Gamepad"))
 			{
-				let Gamepad=GMOD("gs.Controller.Gamepad");
+				let Gamepad=GMOD("gs.Con.Gamepad");
 				for(let controller of this.controllers)
 				{
 					if(controller instanceof Gamepad) return true;
@@ -102,10 +102,10 @@
 		doPoll()
 		{
 			//TODO hold list of gamepads?
-			if(HMOD("gs.Controller.Gamepad"))
+			if(HMOD("gs.Con.Gamepad"))
 			{
 				//this.poll=requestAnimationFrame(this.doPoll);
-				let Gamepad=GMOD("gs.Controller.Gamepad");
+				let Gamepad=GMOD("gs.Con.Gamepad");
 				for(let controller of this.controllers)
 				{
 					if(controller instanceof Gamepad) controller.update();

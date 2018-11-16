@@ -4,8 +4,8 @@
 
 	SC=SC({
 		rescope:"rescope",
-		Keyboard:"gs.Controller.Keyboard",
-		Gamepad:"gs.Controller.Gamepad",
+		Keyboard:"gs.Con.Keyboard",
+		Gamepad:"gs.Con.Gamepad",
 	});
 
 	Game.ControllerConfig=µ.Class(Game,{

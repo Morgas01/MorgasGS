@@ -4,14 +4,27 @@
 		"uses": []
 	},
 	"gs.Button": {
-		"deps": [],
+		"deps": [
+			"gs.Axis"
+		],
 		"uses": []
 	},
 	"gs.Component": {
 		"deps": [],
 		"uses": []
 	},
-	"gs.Controller.Gamepad": {
+	"gs.Con.Analyzer": {
+		"deps": [],
+		"uses": []
+	},
+	"gs.Con.Consumer": {
+		"deps": [
+			"gs.Controller",
+			"Patch"
+		],
+		"uses": []
+	},
+	"gs.Con.Gamepad": {
 		"deps": [
 			"gs.Controller"
 		],
@@ -34,7 +47,7 @@
 			"gs.Stick"
 		]
 	},
-	"gs.Controller.Keyboard": {
+	"gs.Con.Keyboard": {
 		"deps": [
 			"gs.Controller"
 		],
@@ -50,8 +63,8 @@
 		],
 		"uses": [
 			"rescope",
-			"gs.Controller.Keyboard",
-			"gs.Controller.Gamepad"
+			"gs.Con.Keyboard",
+			"gs.Con.Gamepad"
 		]
 	},
 	"gs.Game.Embed": {
@@ -143,7 +156,8 @@
 			"gs.Component"
 		],
 		"uses": [
-			"rescope"
+			"rescope",
+			"gs.Con.Consumer"
 		]
 	}
 }

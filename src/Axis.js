@@ -5,9 +5,10 @@
 	//SC=SC({});
 
 	gs.Axis=µ.Class({
-		constructor:function({value=0,correction=0,scale=1}={})
+		constructor:function({value=0,correction=0,scale=1,min=-100,max=100}={})
 		{
 			this.value=0;
+			this.oldValue=0;
 			this.correction=0;
 			this.scale=1;
 
@@ -26,15 +27,17 @@
         setValue(value)
         {
         	if(value==null) return false;
-        	value=Math.min(Math.max(value*this.scale+this.correction,-100),100);
+        	value=Math.min(Math.max(value*this.scale+this.correction,this.min),this.max);
         	if(this.value==value) return false;
+        	this.oldValue=this.value;
 			this.value=value;
 			return true;
         },
 		getState()
 		{
 			return {
-				value:this.value
+				value:this.value,
+				old:this.oldValue
 			};
 		},
 		toJSON()

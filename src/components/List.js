@@ -3,7 +3,8 @@
 	let Component=GMOD("gs.Component");
 
 	SC=SC({
-		rs:"rescope"
+		rs:"rescope",
+		Consumer:"gs.Con.Consumer"
 	});
 
 	Component.List=µ.Class(Component,{
@@ -12,6 +13,8 @@
 			SC.rs.all(this,["_step","moveRight","moveLeft","moveDown","moveUp"]);
 
 			this.mega(controllerMappings);
+
+			new SC.Consumer(this,this.actions);
 
 			this.columns=1;
 			this.data=data;
@@ -28,7 +31,7 @@
 				method:null,
 				timer:null,
 				currentTime:Component.INITIAL_MOVEMENT_TIMEOUT
-			}
+			};
 
 			this.update();
 		},
@@ -154,9 +157,9 @@
 			"null":{action:"move"}
 		}
 	}]]);
-	Component.INITIAL_MOVEMENT_TIMEOUT=800;
-	Component.MIN_MOVEMENT_TIMEOUT=125;
-	Component.MOVEMENT_ACCELERATION=1.2;
+	Component.INITIAL_MOVEMENT_TIMEOUT=750;
+	Component.MIN_MOVEMENT_TIMEOUT=75;
+	Component.MOVEMENT_ACCELERATION=1.25;
 
 	SMOD("gs.Comp.List",Component.List);
 

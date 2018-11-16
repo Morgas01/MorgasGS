@@ -2,27 +2,31 @@
 let SC=µ.shortcut({
 	rs:"rescope",
 	rq:"request",
-	remove:"array.remove"
+	remove:"array.remove",
+	list:"gs.Comp.List"
 });
 
 let ResourceWar=µ.Class(µ.gs.Game,{
 	name:"ResourceWar",
-	constructor:function()
+	constructor:function(maps)
 	{
 		this.mega();
-		this.map=new ResourceWar.Map();
-		this.domElement.appendChild(this.map.domElement);
+		this.maps=maps;
+		this.menu=new SC.list(this.maps,(e,d)=>e.textContent=d.name,{columns:1});
+		this.domElement.appendChild(this.menu.domElement);
+		this.map=null;
 
-		this.map.loadLevel("test");
+		//this.map.loadLevel("test");
 	},
 	onControllerChange(event)
 	{
-		this.map.consumeControllerChange(event);
+		if(this.map) this.map.consumeControllerChange(event);
+		else this.menu.consumeControllerChange(event);
 	},
 	setPause(value)
 	{
 		this.mega(value);
-		this.map.setPause(value);
+		if(this.map) this.map.setPause(value);
 	}
 });
 ResourceWar.Map=µ.Class(µ.gs.Component,{
@@ -595,5 +599,5 @@ ResourceWar.Npc=µ.Class({
 		if(myBiggest&&easyTarget) myBiggest.setTarget(easyTarget);
 	}
 });
-
-µ.gs.Game.Embed(ResourceWar);
+SC.rq.json("resourceWar_maps/mapList.json")
+.then(maps=>µ.gs.Game.Embed(ResourceWar,{args:[maps]}));

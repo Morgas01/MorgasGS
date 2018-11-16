@@ -135,6 +135,6 @@
 		}
 	});
 
-	SMOD("gs.Controller.Gamepad",Controller.Gamepad);
+	SMOD("gs.Con.Gamepad",Controller.Gamepad);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

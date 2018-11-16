@@ -51,9 +51,9 @@
 		},
 		keyListener(event)
 		{
-			if(HMOD("gs.Controller.Keyboard"))
+			if(HMOD("gs.Con.Keyboard"))
 			{
-				let KeyCon=GMOD("gs.Controller.Keyboard");
+				let KeyCon=GMOD("gs.Con.Keyboard");
 				let eventConsumed=false;
 				for(let con of this.controllers)
 				{
@@ -88,9 +88,9 @@
 		{
 			if(this.poll!==null) return false;
 
-			if(HMOD("gs.Controller.Gamepad"))
+			if(HMOD("gs.Con.Gamepad"))
 			{
-				let Gamepad=GMOD("gs.Controller.Gamepad");
+				let Gamepad=GMOD("gs.Con.Gamepad");
 				for(let controller of this.controllers)
 				{
 					if(controller instanceof Gamepad) return true;
@@ -102,10 +102,10 @@
 		doPoll()
 		{
 			//TODO hold list of gamepads?
-			if(HMOD("gs.Controller.Gamepad"))
+			if(HMOD("gs.Con.Gamepad"))
 			{
 				//this.poll=requestAnimationFrame(this.doPoll);
-				let Gamepad=GMOD("gs.Controller.Gamepad");
+				let Gamepad=GMOD("gs.Con.Gamepad");
 				for(let controller of this.controllers)
 				{
 					if(controller instanceof Gamepad) controller.update();
@@ -395,8 +395,8 @@
 		getState()
 		{
 			return {
-				x:this.xAxis.value,
-				y:this.yAxis.value
+				x:this.xAxis.getState(),
+				y:this.yAxis.getState()
 			};
 		},
 		toJSON()
@@ -411,8 +411,8 @@
 	gs.Stick.fromJSON=function(json)
 	{
 		return new gs.Stick({
-			xAxis:new SC.Acis(json.xAxis),
-			yAxis:new SC.Acis(json.yAxis)
+			xAxis:new SC.Axis(json.xAxis),
+			yAxis:new SC.Axis(json.yAxis)
 		});
 	};
 
@@ -697,8 +697,8 @@
 
 	SC=SC({
 		rescope:"rescope",
-		Keyboard:"gs.Controller.Keyboard",
-		Gamepad:"gs.Controller.Gamepad",
+		Keyboard:"gs.Con.Keyboard",
+		Gamepad:"gs.Con.Gamepad",
 	});
 
 	Game.ControllerConfig=µ.Class(Game,{
@@ -1481,7 +1481,7 @@
 		return rtn;
 	};
 
-	SMOD("gs.Controller.Keyboard",Controller.Keyboard);
+	SMOD("gs.Con.Keyboard",Controller.Keyboard);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -1622,7 +1622,217 @@
 		}
 	});
 
-	SMOD("gs.Controller.Gamepad",Controller.Gamepad);
+	SMOD("gs.Con.Gamepad",Controller.Gamepad);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC) {
+
+	let Controller=GMOD("gs.Controller");
+	let Patch=GMOD("Patch");
+
+	//SC=SC({});
+
+	/**
+	 * Mapping from controller ID to {@link ControllerConsumer~controllerMapping controllerMapping}.
+	 * A mapping for "" (empty string) is the default mapping
+	 * @typedef {Object.<String,ControllerConsumer~controllerMapping} ControllerConsumer~mapping
+ 	 */
+	/**
+	 * Mappings for {@link Controller.ChangeEvent} types.
+	 * Inside each mapping is a mapping for the input index to the task.
+	 * A mapping for input index "" (empty string) is the default mapping
+	 * @typedef {Object}ControllerConsumer~controllerMapping
+	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (button)
+	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (axis)
+	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (stick)
+	 */
+	/** @typedef {Object} ControllerConsumer~controllerMappingTask
+	 * @property {String} action - component action
+	 * @property {Any} (data) - additional data for the component action
+	 */
+
+	let ControllerConsumer=Controller.Consumer=µ.Class(Patch,{
+		patch:function(actions,mapping={},keys=ControllerConsumer.defaultKeys)
+		{
+			this.actions=actions;
+			/** @type {ControllerConsumer~mapping}*/
+			this.mapping=mapping;
+			this.composeKeys(keys);
+		},
+		composeKeys:["setMapping","addControllerMapping","consumeControllerChange"],
+		/**
+		 * @param {ControllerConsumer~mapping} mapping
+		 */
+		setMapping(mapping)
+		{
+			this.mapping=mapping;
+		},
+		/**
+		 * @param {String} controllerID
+		 * @param {String} type
+		 * @param {String} index
+		 * @param {String} action
+		 * @param {Any} [data]
+		 * @returns {gs.ControllerConsumer}
+		 */
+		addControllerMapping(controllerID,type,index,action,data)
+		{
+			if(!this.controllerMappings[controllerID])
+			{
+				this.controllerMappings[controllerID]={};
+			}
+			let mapping=this.controllerMappings[controllerID];
+			if(!mapping[type]) mapping[type]={};
+			mapping[type][index]={action:action,data:data};
+		},
+		/**
+		 * @param {gs.Controller.ChangeEvent} event
+		 * @returns {boolean} consumed
+		 */
+		consumeControllerChange(event)
+		{
+			let mapping=this.controllerMappings[event.controllerID];
+			if(!mapping)
+			{
+				mapping=this.controllerMappings[""];
+			}
+			if(mapping&&mapping[event.type])
+			{
+				let typeMapping=mapping[event.type];
+				let task=typeMapping[event.index]||typeMapping[null];
+				if(task&&task.action in this.actions)
+				{
+					let action=this.actions[task.action];
+					action.call(this.instance,event,task.data,event);
+					return true;
+				}
+			}
+			return false;
+		}
+	});
+	ControllerConsumer.defaultKeys={
+		setMappings:"setControllerMappings",
+		consumeControllerChange:"consumeControllerChange"
+	};
+
+	SMOD("gs.Con.Consumer",ControllerConsumer);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC) {
+
+	let gs=µ.gs=µ.gs||{};
+
+	//SC=SC({});
+
+	let Analyzer=Controller.Analyzer=µ.Class({
+		constructor:function ({buttonThreshold=50,axisThreshold=75,stickThresholdX=75,stickThresholdY=75}={})
+		{
+
+			this.buttonThreshold=buttonThreshold;
+			this.axisThreshold=axisThreshold;
+			this.stickThresholdX=stickThresholdX;
+			this.stickThresholdY=stickThresholdY;
+		},
+		analyze(event)
+		{
+			let result={
+				/**
+				 * button is pressed
+				 * @type {Boolean}
+				 */
+				pressed:null,
+				/**
+				 * button's pressed state changed
+				 * @type {Boolean}
+				 */
+				pressChange:null,
+				/**
+				 * distance of axis or stick
+				 * @type {Number}
+				 */
+				distance:null,
+				/**
+				 * direction of axis: -1,0,1
+				 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+				 * @type {Number}
+				 */
+				direction:null,
+				/**
+				 * previous direction
+				 * @type {Number}
+				 */
+				oldDirection:null,
+				/**
+				 * direction of stick reduced to 16 facets (-8 - +8)
+				 * up is 0 and down is +8 and -8
+				 * @type {Number}
+				 */
+				direction16:null,
+				/**
+				 * previous direction16
+				 * @type {Number}
+				 */
+				oldDirection16:null,
+			};
+			let state=event.value;
+			switch (event.type)
+			{
+				case "button":
+					if(state.value>this.buttonThreshold)
+					{
+						result.pressed=true;
+						result.pressChange=state.old<this.buttonThreshold;
+					}
+					else
+					{
+						result.pressChange=state.old>=this.buttonThreshold;
+					}
+					break;
+				case "axis":
+					result.distance=Math.abs(state.value);
+					if(result.distance<this.axisThreshold)
+					{
+						result.distance=0;
+					}
+					result.direction=Math.sign(result.distance);
+
+					result.oldDistance=Math.abs(state.old);
+					if(result.oldDistance<this.axisThreshold)
+					{
+						result.oldDistance=0;
+					}
+					result.oldDirection=Math.sign(result.distance);
+					break;
+				case "stick":
+				{
+					let valueX=state.x.value<this.stickThresholdX?0:state.x.value;
+					let valueY=state.y.value<this.stickThresholdY?0:state.y.value;
+
+					result.distance=Math.sqrt(valueX**2+valueY**2);
+					if(distance>.5)
+					{
+						result.direction=Math.atan2(valueX,valueY);
+						result.direction16=Math.round(result.direction*8/Math.PI)
+					}
+
+					let oldX=state.x.old<this.stickThresholdX?0:state.x.old;
+					let oldY=state.y.old<this.stickThresholdY?0:state.y.old;
+					result.oldDistance=Math.sqrt(stateX.old**2+stateY.old**2);
+					if(result.oldDistance>.5)
+					{
+						result.oldDirection=Math.atan2(oldX,oldY);
+						result.oldDirection16=Math.round(result.oldDirection*8/Math.PI)
+					}
+					break;
+				}
+			}
+			return result;
+		}
+	});
+
+	SMOD("gs.Con.Analyzer")
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -1726,7 +1936,8 @@
 	let Component=GMOD("gs.Component");
 
 	SC=SC({
-		rs:"rescope"
+		rs:"rescope",
+		Consumer:"gs.Con.Consumer"
 	});
 
 	Component.List=µ.Class(Component,{
@@ -1735,6 +1946,8 @@
 			SC.rs.all(this,["_step","moveRight","moveLeft","moveDown","moveUp"]);
 
 			this.mega(controllerMappings);
+
+			new SC.Consumer(this,this.actions);
 
 			this.columns=1;
 			this.data=data;
@@ -1751,7 +1964,7 @@
 				method:null,
 				timer:null,
 				currentTime:Component.INITIAL_MOVEMENT_TIMEOUT
-			}
+			};
 
 			this.update();
 		},
@@ -1877,9 +2090,9 @@
 			"null":{action:"move"}
 		}
 	}]]);
-	Component.INITIAL_MOVEMENT_TIMEOUT=800;
-	Component.MIN_MOVEMENT_TIMEOUT=125;
-	Component.MOVEMENT_ACCELERATION=1.2;
+	Component.INITIAL_MOVEMENT_TIMEOUT=750;
+	Component.MIN_MOVEMENT_TIMEOUT=75;
+	Component.MOVEMENT_ACCELERATION=1.25;
 
 	SMOD("gs.Comp.List",Component.List);
 
@@ -2069,65 +2282,11 @@
 
 	//SC=SC({});
 
-	gs.Button=µ.Class({
-		constructor:function({value=0,threshold=50}={})
-		{
-			this.value=0;
-			this.threshold=50;
-
-			this.setValue(value);
-			this.setThreshold(threshold);
-		},
-		setThreshold(threshold=50)
-		{
-			this.threshold=Math.min(Math.max(threshold,0),100);
-		},
-        setValue(value=0)
-        {
-        	if(value==null) return false;
-        	value=Math.min(Math.max(value,0),100);
-        	if(this.value==value) return false;
-        	this.value=value;
-        	return true;
-        },
-		isPressed()
-		{
-			return this.value>=this.threshold;
-		},
-		getState()
-		{
-			return {
-				value:this.value,
-				pressed:this.isPressed()
-			}
-		},
-		toJSON()
-		{
-			return {
-				threshold:this.threshold
-			};
-		}
-	});
-
-	gs.Button.fromJSON=function(json)
-	{
-		return new gs.Button(json);
-	};
-
-	SMOD("gs.Button",gs.Button);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-    let gs=µ.gs=µ.gs||{};
-
-	//SC=SC({});
-
 	gs.Axis=µ.Class({
-		constructor:function({value=0,correction=0,scale=1}={})
+		constructor:function({value=0,correction=0,scale=1,min=-100,max=100}={})
 		{
 			this.value=0;
+			this.oldValue=0;
 			this.correction=0;
 			this.scale=1;
 
@@ -2146,15 +2305,17 @@
         setValue(value)
         {
         	if(value==null) return false;
-        	value=Math.min(Math.max(value*this.scale+this.correction,-100),100);
+        	value=Math.min(Math.max(value*this.scale+this.correction,this.min),this.max);
         	if(this.value==value) return false;
+        	this.oldValue=this.value;
 			this.value=value;
 			return true;
         },
 		getState()
 		{
 			return {
-				value:this.value
+				value:this.value,
+				old:this.oldValue
 			};
 		},
 		toJSON()
@@ -2172,6 +2333,32 @@
 	};
 
 	SMOD("gs.Axis",gs.Axis);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+    let gs=µ.gs=µ.gs||{};
+
+    let Axis=GMOD("gs.Axis");
+
+	//SC=SC({});
+
+	gs.Button=µ.Class(Axis,{
+		constructor:function(param={})
+		{
+			param.min=0;
+			param.max=100;
+			this.mega(param);
+		}
+	});
+
+	gs.Button.fromJSON=function(json)
+	{
+		return new gs.Button(json);
+	};
+
+	SMOD("gs.Button",gs.Button);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 //# sourceMappingURL=MorgasGS-0.8.3.js.map

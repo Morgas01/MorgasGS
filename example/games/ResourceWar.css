@@ -57,3 +57,23 @@
 .Package {
     fill:var(--team-color);
 }
+.List > div {
+	border:.5ex solid white;
+	border-radius: 1ex;
+	background: chocolate;
+	color: black;
+	padding: 1ex 1em;
+	margin: 1em;
+	font-size: 2em;
+	text-align: center;
+}
+.List > div.active {
+	background-color: wheat;
+	position:relative;
+}
+.List > div.active::before {
+	content:"➩";
+	position:absolute;
+	right:calc(100% + 1ex);
+	color: white;
+}

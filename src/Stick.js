@@ -29,8 +29,8 @@
 		getState()
 		{
 			return {
-				x:this.xAxis.value,
-				y:this.yAxis.value
+				x:this.xAxis.getState(),
+				y:this.yAxis.getState()
 			};
 		},
 		toJSON()
@@ -45,8 +45,8 @@
 	gs.Stick.fromJSON=function(json)
 	{
 		return new gs.Stick({
-			xAxis:new SC.Acis(json.xAxis),
-			yAxis:new SC.Acis(json.yAxis)
+			xAxis:new SC.Axis(json.xAxis),
+			yAxis:new SC.Axis(json.yAxis)
 		});
 	};
 

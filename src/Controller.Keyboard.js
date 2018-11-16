@@ -182,6 +182,6 @@
 		return rtn;
 	};
 
-	SMOD("gs.Controller.Keyboard",Controller.Keyboard);
+	SMOD("gs.Con.Keyboard",Controller.Keyboard);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
