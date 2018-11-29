@@ -11,10 +11,15 @@
 	},
 	"gs.Component": {
 		"deps": [],
-		"uses": []
+		"uses": [
+			"gs.Con.Consumer",
+			"gs.Con.Analyzer"
+		]
 	},
 	"gs.Con.Analyzer": {
-		"deps": [],
+		"deps": [
+			"gs.Controller"
+		],
 		"uses": []
 	},
 	"gs.Con.Consumer": {
@@ -156,8 +161,7 @@
 			"gs.Component"
 		],
 		"uses": [
-			"rescope",
-			"gs.Con.Consumer"
+			"rescope"
 		]
 	}
 }

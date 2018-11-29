@@ -30,7 +30,7 @@
 			this.actions=actions;
 			/** @type {ControllerConsumer~mapping}*/
 			this.mapping=mapping;
-			this.composeKeys(keys);
+			this.composeInstance(keys);
 		},
 		composeKeys:["setMapping","addControllerMapping","consumeControllerChange"],
 		/**
@@ -50,11 +50,11 @@
 		 */
 		addControllerMapping(controllerID,type,index,action,data)
 		{
-			if(!this.controllerMappings[controllerID])
+			if(!this.mapping[controllerID])
 			{
-				this.controllerMappings[controllerID]={};
+				this.mapping[controllerID]={};
 			}
-			let mapping=this.controllerMappings[controllerID];
+			let mapping=this.mapping[controllerID];
 			if(!mapping[type]) mapping[type]={};
 			mapping[type][index]={action:action,data:data};
 		},
@@ -64,19 +64,19 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.controllerMappings[event.controllerID];
+			let mapping=this.mapping[event.controllerID];
 			if(!mapping)
 			{
-				mapping=this.controllerMappings[""];
+				mapping=this.mapping["*"];
 			}
 			if(mapping&&mapping[event.type])
 			{
 				let typeMapping=mapping[event.type];
-				let task=typeMapping[event.index]||typeMapping[null];
+				let task=typeMapping[event.index]||typeMapping["*"];
 				if(task&&task.action in this.actions)
 				{
 					let action=this.actions[task.action];
-					action.call(this.instance,event,task.data,event);
+					action.call(this.instance,event,task.data);
 					return true;
 				}
 			}
@@ -84,7 +84,7 @@
 		}
 	});
 	ControllerConsumer.defaultKeys={
-		setMappings:"setControllerMappings",
+		setMappings:"setmapping",
 		consumeControllerChange:"consumeControllerChange"
 	};
 

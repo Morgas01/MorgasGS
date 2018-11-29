@@ -11,6 +11,8 @@
 			this.oldValue=0;
 			this.correction=0;
 			this.scale=1;
+			this.min=min;
+			this.max=max;
 
 			this.setValue(value);
 			this.setCorrection(correction);

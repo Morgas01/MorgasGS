@@ -1,17 +1,16 @@
 (function(µ,SMOD,GMOD,HMOD,SC) {
 
-	let gs=µ.gs=µ.gs||{};
+	let Controller=GMOD("gs.Controller");
 
 	//SC=SC({});
 
 	let Analyzer=Controller.Analyzer=µ.Class({
-		constructor:function ({buttonThreshold=50,axisThreshold=75,stickThresholdX=75,stickThresholdY=75}={})
+		constructor:function ({buttonThreshold=50,axisThreshold=75,stickThreshold=75}={})
 		{
 
 			this.buttonThreshold=buttonThreshold;
 			this.axisThreshold=axisThreshold;
-			this.stickThresholdX=stickThresholdX;
-			this.stickThresholdY=stickThresholdY;
+			this.stickThreshold=Math.max(Analyzer.MIN_STICK_THRESHOLD,stickThreshold); // minimum threshold for angle calculation
 		},
 		analyze(event)
 		{
@@ -55,61 +54,63 @@
 				oldDirection16:null,
 			};
 			let state=event.value;
-			switch (event.type)
+
+			let analyzeFn=this["_analyze_"+event.type];
+			if(!analyzeFn)
 			{
-				case "button":
-					if(state.value>this.buttonThreshold)
-					{
-						result.pressed=true;
-						result.pressChange=state.old<this.buttonThreshold;
-					}
-					else
-					{
-						result.pressChange=state.old>=this.buttonThreshold;
-					}
-					break;
-				case "axis":
-					result.distance=Math.abs(state.value);
-					if(result.distance<this.axisThreshold)
-					{
-						result.distance=0;
-					}
-					result.direction=Math.sign(result.distance);
-
-					result.oldDistance=Math.abs(state.old);
-					if(result.oldDistance<this.axisThreshold)
-					{
-						result.oldDistance=0;
-					}
-					result.oldDirection=Math.sign(result.distance);
-					break;
-				case "stick":
-				{
-					let valueX=state.x.value<this.stickThresholdX?0:state.x.value;
-					let valueY=state.y.value<this.stickThresholdY?0:state.y.value;
-
-					result.distance=Math.sqrt(valueX**2+valueY**2);
-					if(distance>.5)
-					{
-						result.direction=Math.atan2(valueX,valueY);
-						result.direction16=Math.round(result.direction*8/Math.PI)
-					}
-
-					let oldX=state.x.old<this.stickThresholdX?0:state.x.old;
-					let oldY=state.y.old<this.stickThresholdY?0:state.y.old;
-					result.oldDistance=Math.sqrt(stateX.old**2+stateY.old**2);
-					if(result.oldDistance>.5)
-					{
-						result.oldDirection=Math.atan2(oldX,oldY);
-						result.oldDirection16=Math.round(result.oldDirection*8/Math.PI)
-					}
-					break;
-				}
+				µ.logger.error("#Controller.Analyzer:001 cannot analyze event type: "+event.type,event);
+				return null;
 			}
+			analyzeFn.call(this,state,result);
 			return result;
+		},
+		_analyze_button(state,result)
+		{
+			result.pressed=state.value>this.buttonThreshold;
+			result.pressChange=(state.old>this.buttonThreshold)!=result.pressed;
+		},
+		_analyze_axis(state,result)
+		{
+			result.distance=Math.abs(state.value);
+			if(result.distance<this.axisThreshold)
+			{
+				result.distance=0;
+			}
+			result.direction=Math.sign(result.distance);
+
+			result.oldDistance=Math.abs(state.old);
+			if(result.oldDistance<this.axisThreshold)
+			{
+				result.oldDistance=0;
+			}
+			result.oldDirection=Math.sign(result.distance);
+		},
+		_analyze_stick(state,result)
+		{
+			let valueX=state.x.value;
+			let valueY=state.y.value;
+
+			result.distance=Math.sqrt(valueX**2+valueY**2);
+			if(result.distance>this.stickThreshold)
+			{
+				result.pressed=true
+				result.direction=Math.atan2(valueX,valueY);
+				result.direction16=Math.round(result.direction*8/Math.PI);
+			}
+
+			let oldX=state.x.old;
+			let oldY=state.y.old;
+			result.oldDistance=Math.sqrt(oldX**2+oldY**2);
+			result.pressChange=(result.oldDistance>this.stickThreshold)!=result.pressed;
+			if(result.oldDistance>this.stickThreshold&&result.oldDistance>.5)
+			{
+				result.oldDirection=Math.atan2(oldX,oldY);
+				result.oldDirection16=Math.round(result.oldDirection*8/Math.PI)
+			}
 		}
 	});
+	Analyzer.MIN_STICK_THRESHOLD=.5;
 
-	SMOD("gs.Con.Analyzer")
+	SMOD("gs.Con.Analyzer",Analyzer);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

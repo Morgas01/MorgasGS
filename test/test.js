@@ -59,8 +59,8 @@
 
 	tests.loadMorgas("Morgas");
 
-	tests.loadTest("Button");
 	tests.loadTest("Axis");
+	tests.loadTest("Button");
 	tests.loadTest("Stick");
 
 	tests.loadMorgas("Morgas.Patch");

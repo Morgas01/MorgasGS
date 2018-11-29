@@ -3,18 +3,15 @@
 	let Component=GMOD("gs.Component");
 
 	SC=SC({
-		rs:"rescope",
-		Consumer:"gs.Con.Consumer"
+		rs:"rescope"
 	});
 
-	Component.List=µ.Class(Component,{
-		constructor:function(data=[],mapper=Component.STD_MAPPER,{columns=1,active=0,controllerMappings=Component.STD_CONTROLLER_MAPPINGS}={})
+	let List=Component.List=µ.Class(Component,{
+		constructor:function(data=[],mapper=List.STD_MAPPER,{columns=1,active=0,controllerMappings=List.STD_CONTROLLER_MAPPINGS,threshold}={})
 		{
-			SC.rs.all(this,["_step","moveRight","moveLeft","moveDown","moveUp"]);
+			SC.rs.all(this,["_step"]);
 
-			this.mega(controllerMappings);
-
-			new SC.Consumer(this,this.actions);
+			this.mega(controllerMappings,{stickThreshold:threshold});
 
 			this.columns=1;
 			this.data=data;
@@ -30,7 +27,7 @@
 			this.movement={
 				method:null,
 				timer:null,
-				currentTime:Component.INITIAL_MOVEMENT_TIMEOUT
+				currentTime:List.INITIAL_MOVEMENT_TIMEOUT
 			};
 
 			this.update();
@@ -57,7 +54,7 @@
 			this.data=data;
 			return this;
 		},
-		setMapper(mapper=Component.STD_MAPPER)
+		setMapper(mapper=List.STD_MAPPER)
 		{
 			this.mapper=mapper;
 			return this;
@@ -68,28 +65,21 @@
 			this.domElement.style.setProperty("--list-columns",this.columns);
 		},
 		actions:{
-			move(stick)
+			move(stickEvent)
 			{
-				let absX=Math.abs(stick.value.x);
-				let absY=Math.abs(stick.value.y);
+				let analysis=this.analyzer.analyze(stickEvent);
 
-				let method;
-				if(absX<33&&absY<33)
+				if(!analysis.pressed)
 				{
 					this._stopMovement();
 					return;
 				}
-				else if(absX>=absY)
+				let d4=analysis.direction16/4;
+				let od4=analysis.oldDirection16/4;
+				if(analysis.pressChange||d4!=od4)
 				{
-					method=stick.value.x<0?this.moveLeft:this.moveRight;
-				}
-				else
-				{
-					method=stick.value.y<0?this.moveDown:this.moveUp;
-				}
+					let method=List._MOVEMENT_MAP[d4];
 
-				if(method!=this.movement.method)
-				{
 					this._stopMovement();
 					this.movement.method=method;
 					this._step();
@@ -100,7 +90,7 @@
 		{
 			clearTimeout(this.movement.timer);
 			this.movement.method=null;
-			this.movement.currentTime=Component.INITIAL_MOVEMENT_TIMEOUT;
+			this.movement.currentTime=List.INITIAL_MOVEMENT_TIMEOUT;
 		},
 		moveRight()
 		{
@@ -147,20 +137,29 @@
 		{
 			this.movement.method.call(this);
 			this.movement.timer=setTimeout(this._step,this.movement.currentTime);
-			this.movement.currentTime=Math.max(Component.MIN_MOVEMENT_TIMEOUT,this.movement.currentTime/Component.MOVEMENT_ACCELERATION);
+			this.movement.currentTime=Math.max(List.MIN_MOVEMENT_TIMEOUT,this.movement.currentTime/List.MOVEMENT_ACCELERATION);
 		}
 	});
 
-	Component.STD_MAPPER=(e,d)=>e.textContent=d;
-	Component.STD_CONTROLLER_MAPPINGS=new Map([[null,{
-		"stick":{
-			"null":{action:"move"}
+	List._MOVEMENT_MAP={
+		"-2":List.prototype.moveDown,
+		"-1":List.prototype.moveLeft,
+		"0" :List.prototype.moveUp,
+		"1" :List.prototype.moveRight,
+		"2" :List.prototype.moveDown,
+	};
+	List.STD_MAPPER=(e,d)=>e.textContent=d;
+	List.STD_CONTROLLER_MAPPINGS={
+		"*":{
+			"stick":{
+				"*":{action:"move"}
+			}
 		}
-	}]]);
-	Component.INITIAL_MOVEMENT_TIMEOUT=750;
-	Component.MIN_MOVEMENT_TIMEOUT=75;
-	Component.MOVEMENT_ACCELERATION=1.25;
+	};
+	List.INITIAL_MOVEMENT_TIMEOUT=750;
+	List.MIN_MOVEMENT_TIMEOUT=75;
+	List.MOVEMENT_ACCELERATION=1.25;
 
-	SMOD("gs.Comp.List",Component.List);
+	SMOD("gs.Comp.List",List);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

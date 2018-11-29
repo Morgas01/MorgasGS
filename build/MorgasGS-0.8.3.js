@@ -1629,111 +1629,16 @@
 (function(µ,SMOD,GMOD,HMOD,SC) {
 
 	let Controller=GMOD("gs.Controller");
-	let Patch=GMOD("Patch");
-
-	//SC=SC({});
-
-	/**
-	 * Mapping from controller ID to {@link ControllerConsumer~controllerMapping controllerMapping}.
-	 * A mapping for "" (empty string) is the default mapping
-	 * @typedef {Object.<String,ControllerConsumer~controllerMapping} ControllerConsumer~mapping
- 	 */
-	/**
-	 * Mappings for {@link Controller.ChangeEvent} types.
-	 * Inside each mapping is a mapping for the input index to the task.
-	 * A mapping for input index "" (empty string) is the default mapping
-	 * @typedef {Object}ControllerConsumer~controllerMapping
-	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (button)
-	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (axis)
-	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (stick)
-	 */
-	/** @typedef {Object} ControllerConsumer~controllerMappingTask
-	 * @property {String} action - component action
-	 * @property {Any} (data) - additional data for the component action
-	 */
-
-	let ControllerConsumer=Controller.Consumer=µ.Class(Patch,{
-		patch:function(actions,mapping={},keys=ControllerConsumer.defaultKeys)
-		{
-			this.actions=actions;
-			/** @type {ControllerConsumer~mapping}*/
-			this.mapping=mapping;
-			this.composeKeys(keys);
-		},
-		composeKeys:["setMapping","addControllerMapping","consumeControllerChange"],
-		/**
-		 * @param {ControllerConsumer~mapping} mapping
-		 */
-		setMapping(mapping)
-		{
-			this.mapping=mapping;
-		},
-		/**
-		 * @param {String} controllerID
-		 * @param {String} type
-		 * @param {String} index
-		 * @param {String} action
-		 * @param {Any} [data]
-		 * @returns {gs.ControllerConsumer}
-		 */
-		addControllerMapping(controllerID,type,index,action,data)
-		{
-			if(!this.controllerMappings[controllerID])
-			{
-				this.controllerMappings[controllerID]={};
-			}
-			let mapping=this.controllerMappings[controllerID];
-			if(!mapping[type]) mapping[type]={};
-			mapping[type][index]={action:action,data:data};
-		},
-		/**
-		 * @param {gs.Controller.ChangeEvent} event
-		 * @returns {boolean} consumed
-		 */
-		consumeControllerChange(event)
-		{
-			let mapping=this.controllerMappings[event.controllerID];
-			if(!mapping)
-			{
-				mapping=this.controllerMappings[""];
-			}
-			if(mapping&&mapping[event.type])
-			{
-				let typeMapping=mapping[event.type];
-				let task=typeMapping[event.index]||typeMapping[null];
-				if(task&&task.action in this.actions)
-				{
-					let action=this.actions[task.action];
-					action.call(this.instance,event,task.data,event);
-					return true;
-				}
-			}
-			return false;
-		}
-	});
-	ControllerConsumer.defaultKeys={
-		setMappings:"setControllerMappings",
-		consumeControllerChange:"consumeControllerChange"
-	};
-
-	SMOD("gs.Con.Consumer",ControllerConsumer);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC) {
-
-	let gs=µ.gs=µ.gs||{};
 
 	//SC=SC({});
 
 	let Analyzer=Controller.Analyzer=µ.Class({
-		constructor:function ({buttonThreshold=50,axisThreshold=75,stickThresholdX=75,stickThresholdY=75}={})
+		constructor:function ({buttonThreshold=50,axisThreshold=75,stickThreshold=75}={})
 		{
 
 			this.buttonThreshold=buttonThreshold;
 			this.axisThreshold=axisThreshold;
-			this.stickThresholdX=stickThresholdX;
-			this.stickThresholdY=stickThresholdY;
+			this.stickThreshold=Math.max(Analyzer.MIN_STICK_THRESHOLD,stickThreshold); // minimum threshold for angle calculation
 		},
 		analyze(event)
 		{
@@ -1777,62 +1682,158 @@
 				oldDirection16:null,
 			};
 			let state=event.value;
-			switch (event.type)
+
+			let analyzeFn=this["_analyze_"+event.type];
+			if(!analyzeFn)
 			{
-				case "button":
-					if(state.value>this.buttonThreshold)
-					{
-						result.pressed=true;
-						result.pressChange=state.old<this.buttonThreshold;
-					}
-					else
-					{
-						result.pressChange=state.old>=this.buttonThreshold;
-					}
-					break;
-				case "axis":
-					result.distance=Math.abs(state.value);
-					if(result.distance<this.axisThreshold)
-					{
-						result.distance=0;
-					}
-					result.direction=Math.sign(result.distance);
-
-					result.oldDistance=Math.abs(state.old);
-					if(result.oldDistance<this.axisThreshold)
-					{
-						result.oldDistance=0;
-					}
-					result.oldDirection=Math.sign(result.distance);
-					break;
-				case "stick":
-				{
-					let valueX=state.x.value<this.stickThresholdX?0:state.x.value;
-					let valueY=state.y.value<this.stickThresholdY?0:state.y.value;
-
-					result.distance=Math.sqrt(valueX**2+valueY**2);
-					if(distance>.5)
-					{
-						result.direction=Math.atan2(valueX,valueY);
-						result.direction16=Math.round(result.direction*8/Math.PI)
-					}
-
-					let oldX=state.x.old<this.stickThresholdX?0:state.x.old;
-					let oldY=state.y.old<this.stickThresholdY?0:state.y.old;
-					result.oldDistance=Math.sqrt(stateX.old**2+stateY.old**2);
-					if(result.oldDistance>.5)
-					{
-						result.oldDirection=Math.atan2(oldX,oldY);
-						result.oldDirection16=Math.round(result.oldDirection*8/Math.PI)
-					}
-					break;
-				}
+				µ.logger.error("#Controller.Analyzer:001 cannot analyze event type: "+event.type,event);
+				return null;
 			}
+			analyzeFn.call(this,state,result);
 			return result;
+		},
+		_analyze_button(state,result)
+		{
+			result.pressed=state.value>this.buttonThreshold;
+			result.pressChange=(state.old>this.buttonThreshold)!=result.pressed;
+		},
+		_analyze_axis(state,result)
+		{
+			result.distance=Math.abs(state.value);
+			if(result.distance<this.axisThreshold)
+			{
+				result.distance=0;
+			}
+			result.direction=Math.sign(result.distance);
+
+			result.oldDistance=Math.abs(state.old);
+			if(result.oldDistance<this.axisThreshold)
+			{
+				result.oldDistance=0;
+			}
+			result.oldDirection=Math.sign(result.distance);
+		},
+		_analyze_stick(state,result)
+		{
+			let valueX=state.x.value;
+			let valueY=state.y.value;
+
+			result.distance=Math.sqrt(valueX**2+valueY**2);
+			if(result.distance>this.stickThreshold)
+			{
+				result.pressed=true
+				result.direction=Math.atan2(valueX,valueY);
+				result.direction16=Math.round(result.direction*8/Math.PI);
+			}
+
+			let oldX=state.x.old;
+			let oldY=state.y.old;
+			result.oldDistance=Math.sqrt(oldX**2+oldY**2);
+			result.pressChange=(result.oldDistance>this.stickThreshold)!=result.pressed;
+			if(result.oldDistance>this.stickThreshold&&result.oldDistance>.5)
+			{
+				result.oldDirection=Math.atan2(oldX,oldY);
+				result.oldDirection16=Math.round(result.oldDirection*8/Math.PI)
+			}
 		}
 	});
+	Analyzer.MIN_STICK_THRESHOLD=.5;
 
-	SMOD("gs.Con.Analyzer")
+	SMOD("gs.Con.Analyzer",Analyzer);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC) {
+
+	let Controller=GMOD("gs.Controller");
+	let Patch=GMOD("Patch");
+
+	//SC=SC({});
+
+	/**
+	 * Mapping from controller ID to {@link ControllerConsumer~controllerMapping controllerMapping}.
+	 * A mapping for "" (empty string) is the default mapping
+	 * @typedef {Object.<String,ControllerConsumer~controllerMapping} ControllerConsumer~mapping
+ 	 */
+	/**
+	 * Mappings for {@link Controller.ChangeEvent} types.
+	 * Inside each mapping is a mapping for the input index to the task.
+	 * A mapping for input index "" (empty string) is the default mapping
+	 * @typedef {Object}ControllerConsumer~controllerMapping
+	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (button)
+	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (axis)
+	 * @property {Object.<String,ControllerConsumer~controllerMappingTask>} (stick)
+	 */
+	/** @typedef {Object} ControllerConsumer~controllerMappingTask
+	 * @property {String} action - component action
+	 * @property {Any} (data) - additional data for the component action
+	 */
+
+	let ControllerConsumer=Controller.Consumer=µ.Class(Patch,{
+		patch:function(actions,mapping={},keys=ControllerConsumer.defaultKeys)
+		{
+			this.actions=actions;
+			/** @type {ControllerConsumer~mapping}*/
+			this.mapping=mapping;
+			this.composeInstance(keys);
+		},
+		composeKeys:["setMapping","addControllerMapping","consumeControllerChange"],
+		/**
+		 * @param {ControllerConsumer~mapping} mapping
+		 */
+		setMapping(mapping)
+		{
+			this.mapping=mapping;
+		},
+		/**
+		 * @param {String} controllerID
+		 * @param {String} type
+		 * @param {String} index
+		 * @param {String} action
+		 * @param {Any} [data]
+		 * @returns {gs.ControllerConsumer}
+		 */
+		addControllerMapping(controllerID,type,index,action,data)
+		{
+			if(!this.mapping[controllerID])
+			{
+				this.mapping[controllerID]={};
+			}
+			let mapping=this.mapping[controllerID];
+			if(!mapping[type]) mapping[type]={};
+			mapping[type][index]={action:action,data:data};
+		},
+		/**
+		 * @param {gs.Controller.ChangeEvent} event
+		 * @returns {boolean} consumed
+		 */
+		consumeControllerChange(event)
+		{
+			let mapping=this.mapping[event.controllerID];
+			if(!mapping)
+			{
+				mapping=this.mapping["*"];
+			}
+			if(mapping&&mapping[event.type])
+			{
+				let typeMapping=mapping[event.type];
+				let task=typeMapping[event.index]||typeMapping["*"];
+				if(task&&task.action in this.actions)
+				{
+					let action=this.actions[task.action];
+					action.call(this.instance,event,task.data);
+					return true;
+				}
+			}
+			return false;
+		}
+	});
+	ControllerConsumer.defaultKeys={
+		setMappings:"setmapping",
+		consumeControllerChange:"consumeControllerChange"
+	};
+
+	SMOD("gs.Con.Consumer",ControllerConsumer);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -1840,7 +1841,10 @@
 
 	let gs=µ.gs=µ.gs||{};
 
-	//SC=SC({});
+	SC=SC({
+		Consumer:"gs.Con.Consumer",
+		Analyzer:"gs.Con.Analyzer"
+	});
 
 	/** @typedef {Object} controllerMapping_task
 	 * @property {String} action
@@ -1854,77 +1858,13 @@
 
 	gs.Component=µ.Class({
 		[µ.Class.symbols.abstract]:true,
-		constructor:function(controllerMappings=new Map())
+		constructor:function(mapping=null,analyzerOptions)
 		{
-			//TODO either maps in mapping or mapping as object; not mixed!
-			/** @type {Map.<Number,controllerMapping>} */
-			this.controllerMappings=controllerMappings;
-			/** @type {Map.<Number,Set<Number>>} */
-			this.pressedButtons=new Map();
-		},
-		addControllerMapping(controllerID,type,index,action,data)
-		{
-			if(!this.controllerMappings.has(controllerID))
-			{
-				this.controllerMappings.set(controllerID,{});
-			}
-			let mapping=this.controllerMappings.get(controllerID);
-			if(!mapping[type]) mapping[type]={};
-			mapping[type][index]={action:action,data:data};
-			return this;
+			new SC.Consumer(this,this.actions,mapping);
+			this.analyzer=new SC.Analyzer(analyzerOptions);
 		},
 		/** @type {Object.<String,Function>} */
 		actions:{},
-		/**
-		 * @param {gs.Controller.ChangeEvent} event
-		 * @returns {boolean} consumed
-		 */
-		consumeControllerChange(event)
-		{
-			let mapping=this.controllerMappings.get(event.controllerID);
-			if(!mapping)
-			{
-				mapping=this.controllerMappings.get(null);
-			}
-			if(mapping&&mapping[event.type])
-			{
-				let typeMapping=mapping[event.type];
-				let task=typeMapping[event.index]||typeMapping[null];
-				if(task&&task.action in this.actions)
-				{
-					let action=this.actions[task.action];
-					action.call(this,event,task.data,event);
-					return true;
-				}
-			}
-			return false;
-		},
-		/**
-		 * keeps track of pressed buttons and returns true if a button was pressed now
-		 * @protected
-		 * @param {gs.Controller.ChangeEvent} event - button change event
-		 * @returns {Boolean} button pressed now
-		 */
-		_acceptButton(event)
-		{
-			if(event.type!=="button") return false;
-
-			if(!this.pressedButtons.has(event.controllerID))
-			{
-				this.pressedButtons.set(event.controllerID,new Set())
-			}
-			let controllerSet=this.pressedButtons.get(event.controllerID);
-			if(!event.value.pressed)
-			{
-				controllerSet.delete(event.index);
-				return false;
-			}
-			else if(!controllerSet.has(event.index))
-			{
-				controllerSet.add(event.index);
-				return true;
-			}
-		}
 	});
 
 	SMOD("gs.Component",gs.Component);
@@ -1936,18 +1876,15 @@
 	let Component=GMOD("gs.Component");
 
 	SC=SC({
-		rs:"rescope",
-		Consumer:"gs.Con.Consumer"
+		rs:"rescope"
 	});
 
-	Component.List=µ.Class(Component,{
-		constructor:function(data=[],mapper=Component.STD_MAPPER,{columns=1,active=0,controllerMappings=Component.STD_CONTROLLER_MAPPINGS}={})
+	let List=Component.List=µ.Class(Component,{
+		constructor:function(data=[],mapper=List.STD_MAPPER,{columns=1,active=0,controllerMappings=List.STD_CONTROLLER_MAPPINGS,threshold}={})
 		{
-			SC.rs.all(this,["_step","moveRight","moveLeft","moveDown","moveUp"]);
+			SC.rs.all(this,["_step"]);
 
-			this.mega(controllerMappings);
-
-			new SC.Consumer(this,this.actions);
+			this.mega(controllerMappings,{stickThreshold:threshold});
 
 			this.columns=1;
 			this.data=data;
@@ -1963,7 +1900,7 @@
 			this.movement={
 				method:null,
 				timer:null,
-				currentTime:Component.INITIAL_MOVEMENT_TIMEOUT
+				currentTime:List.INITIAL_MOVEMENT_TIMEOUT
 			};
 
 			this.update();
@@ -1990,7 +1927,7 @@
 			this.data=data;
 			return this;
 		},
-		setMapper(mapper=Component.STD_MAPPER)
+		setMapper(mapper=List.STD_MAPPER)
 		{
 			this.mapper=mapper;
 			return this;
@@ -2001,28 +1938,21 @@
 			this.domElement.style.setProperty("--list-columns",this.columns);
 		},
 		actions:{
-			move(stick)
+			move(stickEvent)
 			{
-				let absX=Math.abs(stick.value.x);
-				let absY=Math.abs(stick.value.y);
+				let analysis=this.analyzer.analyze(stickEvent);
 
-				let method;
-				if(absX<33&&absY<33)
+				if(!analysis.pressed)
 				{
 					this._stopMovement();
 					return;
 				}
-				else if(absX>=absY)
+				let d4=analysis.direction16/4;
+				let od4=analysis.oldDirection16/4;
+				if(analysis.pressChange||d4!=od4)
 				{
-					method=stick.value.x<0?this.moveLeft:this.moveRight;
-				}
-				else
-				{
-					method=stick.value.y<0?this.moveDown:this.moveUp;
-				}
+					let method=List._MOVEMENT_MAP[d4];
 
-				if(method!=this.movement.method)
-				{
 					this._stopMovement();
 					this.movement.method=method;
 					this._step();
@@ -2033,7 +1963,7 @@
 		{
 			clearTimeout(this.movement.timer);
 			this.movement.method=null;
-			this.movement.currentTime=Component.INITIAL_MOVEMENT_TIMEOUT;
+			this.movement.currentTime=List.INITIAL_MOVEMENT_TIMEOUT;
 		},
 		moveRight()
 		{
@@ -2080,21 +2010,30 @@
 		{
 			this.movement.method.call(this);
 			this.movement.timer=setTimeout(this._step,this.movement.currentTime);
-			this.movement.currentTime=Math.max(Component.MIN_MOVEMENT_TIMEOUT,this.movement.currentTime/Component.MOVEMENT_ACCELERATION);
+			this.movement.currentTime=Math.max(List.MIN_MOVEMENT_TIMEOUT,this.movement.currentTime/List.MOVEMENT_ACCELERATION);
 		}
 	});
 
-	Component.STD_MAPPER=(e,d)=>e.textContent=d;
-	Component.STD_CONTROLLER_MAPPINGS=new Map([[null,{
-		"stick":{
-			"null":{action:"move"}
+	List._MOVEMENT_MAP={
+		"-2":List.prototype.moveDown,
+		"-1":List.prototype.moveLeft,
+		"0" :List.prototype.moveUp,
+		"1" :List.prototype.moveRight,
+		"2" :List.prototype.moveDown,
+	};
+	List.STD_MAPPER=(e,d)=>e.textContent=d;
+	List.STD_CONTROLLER_MAPPINGS={
+		"*":{
+			"stick":{
+				"*":{action:"move"}
+			}
 		}
-	}]]);
-	Component.INITIAL_MOVEMENT_TIMEOUT=750;
-	Component.MIN_MOVEMENT_TIMEOUT=75;
-	Component.MOVEMENT_ACCELERATION=1.25;
+	};
+	List.INITIAL_MOVEMENT_TIMEOUT=750;
+	List.MIN_MOVEMENT_TIMEOUT=75;
+	List.MOVEMENT_ACCELERATION=1.25;
 
-	SMOD("gs.Comp.List",Component.List);
+	SMOD("gs.Comp.List",List);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -2289,6 +2228,8 @@
 			this.oldValue=0;
 			this.correction=0;
 			this.scale=1;
+			this.min=min;
+			this.max=max;
 
 			this.setValue(value);
 			this.setCorrection(correction);

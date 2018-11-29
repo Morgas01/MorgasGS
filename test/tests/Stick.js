@@ -10,7 +10,7 @@ module("Stick",[
 		
 		stick.setValue(80,90);
 		let state=stick.getState();
-		addResult(container,state.x===80&&state.y===90,"set");
+		addResult(container,state.x.value===80&&state.y.value===90,"set");
 
 		addResult(container,!stick.setValue(),"not null");
 
