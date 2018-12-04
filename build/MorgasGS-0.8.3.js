@@ -1642,45 +1642,7 @@
 		},
 		analyze(event)
 		{
-			let result={
-				/**
-				 * button is pressed
-				 * @type {Boolean}
-				 */
-				pressed:null,
-				/**
-				 * button's pressed state changed
-				 * @type {Boolean}
-				 */
-				pressChange:null,
-				/**
-				 * distance of axis or stick
-				 * @type {Number}
-				 */
-				distance:null,
-				/**
-				 * direction of axis: -1,0,1
-				 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
-				 * @type {Number}
-				 */
-				direction:null,
-				/**
-				 * previous direction
-				 * @type {Number}
-				 */
-				oldDirection:null,
-				/**
-				 * direction of stick reduced to 16 facets (-8 - +8)
-				 * up is 0 and down is +8 and -8
-				 * @type {Number}
-				 */
-				direction16:null,
-				/**
-				 * previous direction16
-				 * @type {Number}
-				 */
-				oldDirection16:null,
-			};
+			let result=Object.create(ResultBase);
 			let state=event.value;
 
 			let analyzeFn=this["_analyze_"+event.type];
@@ -1695,49 +1657,157 @@
 		_analyze_button(state,result)
 		{
 			result.pressed=state.value>this.buttonThreshold;
-			result.pressChange=(state.old>this.buttonThreshold)!=result.pressed;
+			result.oldPressed=state.old>this.buttonThreshold;
 		},
 		_analyze_axis(state,result)
 		{
 			result.distance=Math.abs(state.value);
-			if(result.distance<this.axisThreshold)
-			{
-				result.distance=0;
-			}
+
+			if(result.distance<this.axisThreshold) result.distance=0;
+			else result.pressed=true;
+
 			result.direction=Math.sign(result.distance);
 
+
 			result.oldDistance=Math.abs(state.old);
-			if(result.oldDistance<this.axisThreshold)
-			{
-				result.oldDistance=0;
-			}
+
+			if(result.oldDistance<this.axisThreshold) result.oldDistance=0;
+			else result.oldPressed=true;
+
 			result.oldDirection=Math.sign(result.distance);
 		},
 		_analyze_stick(state,result)
 		{
 			let valueX=state.x.value;
 			let valueY=state.y.value;
-
 			result.distance=Math.sqrt(valueX**2+valueY**2);
 			if(result.distance>this.stickThreshold)
 			{
-				result.pressed=true
+				result.pressed=true;
 				result.direction=Math.atan2(valueX,valueY);
-				result.direction16=Math.round(result.direction*8/Math.PI);
 			}
 
 			let oldX=state.x.old;
 			let oldY=state.y.old;
 			result.oldDistance=Math.sqrt(oldX**2+oldY**2);
-			result.pressChange=(result.oldDistance>this.stickThreshold)!=result.pressed;
 			if(result.oldDistance>this.stickThreshold&&result.oldDistance>.5)
 			{
+				result.oldPressed=true;
 				result.oldDirection=Math.atan2(oldX,oldY);
-				result.oldDirection16=Math.round(result.oldDirection*8/Math.PI)
 			}
 		}
 	});
 	Analyzer.MIN_STICK_THRESHOLD=.5;
+	let cachedProperties=function(obj,getterMap)
+	{
+		cachedProps={};
+		for(let name in getterMap)
+		{
+			cachedProps[name]={
+				configurable:true,
+				get:function()
+				{
+					let value=getterMap[name].call(this);
+					Object.defineProperty(this,name,{value});
+					return value;
+				}
+			}
+		}
+		return Object.defineProperties(obj,cachedProps);
+	};
+	let ResultBase=cachedProperties({
+		/**
+		 * button is pressed
+		 * @type {Boolean}
+		 */
+		pressed:null,
+		/**
+		 * distance of axis or stick
+		 * @type {Number}
+		 */
+		distance:null,
+		/**
+		 * direction of axis: -1,0,1
+		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+		 * @type {Number}
+		 */
+		direction:null,
+		/**
+		 * button was pressed
+		 * @type {Boolean}
+		 */
+		oldPressed:null,
+		/**
+		 * distance of axis or stick
+		 * @type {Number}
+		 */
+		OldDistance:null,
+		/**
+		 * direction of axis: -1,0,1
+		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+		 * @type {Number}
+		 */
+		oldDirection:null,
+	},{
+		/**
+		 * button's pressed state changed
+		 * @type {Boolean}
+		 */
+		pressChanged()
+		{
+			return this.pressed!==this.oldPressed;
+		},
+		/**
+		 * direction of stick reduced to 16 facets (-8 - +8)
+		 * up is 0 and down is +8 and -8
+		 * @type {Number}
+		 */
+		direction16()
+		{
+			return Math.round(this.direction*8/Math.PI);
+		},
+		/**
+		 * previous direction16
+		 * @type {Number}
+		 */
+		oldDirection16()
+		{
+			return Math.round(this.oldDirection*8/Math.PI);
+		},
+		/**
+		 * stick's direction16 changed
+		 * @type {boolean}
+		 */
+		direction16Changed()
+		{
+			return this.direction16!==this.oldDirection16&&(this.direction16!==8||this.direction16!==-8)
+		},
+		/**
+		 * direction of stick reduced to 4 facets (-2 - +2)
+		 * up is 0 and down is +2 and -2
+		 * @type {Number}
+		 */
+		direction4()
+		{
+			return Math.round(this.direction16/4);
+		},
+		/**
+		 * previous direction4
+		 * @type {Number}
+		 */
+		oldDirection4()
+		{
+			return Math.round(this.OldDrection16/4);
+		},
+		/**
+		 * stick's direction4 changed
+		 * @type {boolean}
+		 */
+		direction4Changed()
+		{
+			return this.direction4!==this.oldDirection4&&(this.direction4!==2||this.direction4!==-2)
+		}
+	});
 
 	SMOD("gs.Con.Analyzer",Analyzer);
 
@@ -1947,11 +2017,9 @@
 					this._stopMovement();
 					return;
 				}
-				let d4=analysis.direction16/4;
-				let od4=analysis.oldDirection16/4;
-				if(analysis.pressChange||d4!=od4)
+				if(analysis.pressChanged||analysis.direction4Changed)
 				{
-					let method=List._MOVEMENT_MAP[d4];
+					let method=List._MOVEMENT_MAP[analysis.direction4];
 
 					this._stopMovement();
 					this.movement.method=method;

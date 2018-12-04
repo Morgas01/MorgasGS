@@ -74,11 +74,9 @@
 					this._stopMovement();
 					return;
 				}
-				let d4=analysis.direction16/4;
-				let od4=analysis.oldDirection16/4;
-				if(analysis.pressChange||d4!=od4)
+				if(analysis.pressChanged||analysis.direction4Changed)
 				{
-					let method=List._MOVEMENT_MAP[d4];
+					let method=List._MOVEMENT_MAP[analysis.direction4];
 
 					this._stopMovement();
 					this.movement.method=method;
