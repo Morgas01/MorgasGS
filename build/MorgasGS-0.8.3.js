@@ -1715,47 +1715,30 @@
 		}
 		return Object.defineProperties(obj,cachedProps);
 	};
-	let ResultBase=cachedProperties({
+	let ResultBase=µ.shortcut({
 		/**
-		 * button is pressed
-		 * @type {Boolean}
-		 */
-		pressed:null,
-		/**
-		 * distance of axis or stick
-		 * @type {Number}
-		 */
-		distance:null,
-		/**
-		 * direction of axis: -1,0,1
-		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
-		 * @type {Number}
-		 */
-		direction:null,
-		/**
-		 * button was pressed
-		 * @type {Boolean}
-		 */
-		oldPressed:null,
-		/**
-		 * distance of axis or stick
-		 * @type {Number}
-		 */
-		OldDistance:null,
-		/**
-		 * direction of axis: -1,0,1
-		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
-		 * @type {Number}
-		 */
-		oldDirection:null,
-	},{
-		/**
-		 * button's pressed state changed
+		 * input pressed state changed
 		 * @type {Boolean}
 		 */
 		pressChanged()
 		{
 			return this.pressed!==this.oldPressed;
+		},
+		/**
+		 * input is pressed now
+		 * @type {Boolean}
+		 */
+		pressedDown()
+		{
+			return this.pressed&&this.pressChanged;
+		},
+		/**
+		 * input is no longer pressed now
+		 * @type {Boolean}
+		 */
+		pressedUp()
+		{
+			return !this.pressed&&this.pressChanged;
 		},
 		/**
 		 * direction of stick reduced to 16 facets (-8 - +8)
@@ -1807,6 +1790,39 @@
 		{
 			return this.direction4!==this.oldDirection4&&(this.direction4!==2||this.direction4!==-2)
 		}
+	},{
+		/**
+		 * button is pressed
+		 * @type {Boolean}
+		 */
+		pressed:null,
+		/**
+		 * distance of axis or stick
+		 * @type {Number}
+		 */
+		distance:null,
+		/**
+		 * direction of axis: -1,0,1
+		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+		 * @type {Number}
+		 */
+		direction:null,
+		/**
+		 * button was pressed
+		 * @type {Boolean}
+		 */
+		oldPressed:null,
+		/**
+		 * distance of axis or stick
+		 * @type {Number}
+		 */
+		OldDistance:null,
+		/**
+		 * direction of axis: -1,0,1
+		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+		 * @type {Number}
+		 */
+		oldDirection:null,
 	});
 
 	SMOD("gs.Con.Analyzer",Analyzer);
@@ -1879,21 +1895,17 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.mapping[event.controllerID];
-			if(!mapping)
+			let task=this.mapping;
+			for(let key of [event.controllerID,event.type,event.index])
 			{
-				mapping=this.mapping["*"];
+				task=task[key]||task["*"];
+				if(!task) return;
 			}
-			if(mapping&&mapping[event.type])
+			if(task.action in this.actions)
 			{
-				let typeMapping=mapping[event.type];
-				let task=typeMapping[event.index]||typeMapping["*"];
-				if(task&&task.action in this.actions)
-				{
-					let action=this.actions[task.action];
-					action.call(this.instance,event,task.data);
-					return true;
-				}
+				let action=this.actions[task.action];
+				action.call(this.instance,event,task.data);
+				return true;
 			}
 			return false;
 		}
@@ -2313,10 +2325,10 @@
 		},
         setValue(value)
         {
+        	this.oldValue=this.value;
         	if(value==null) return false;
         	value=Math.min(Math.max(value*this.scale+this.correction,this.min),this.max);
         	if(this.value==value) return false;
-        	this.oldValue=this.value;
 			this.value=value;
 			return true;
         },

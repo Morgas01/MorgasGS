@@ -17,7 +17,6 @@ let TickTackToe=µ.Class(µ.gs.Game,{
 		this.domElement.appendChild(this.list.domElement);
 		this.analyzer=new µ.gs.Controller.Analyzer();
 
-		this.buttonPressed=0;
 		this.turn=1;
 
 		this.congratulationMessage=document.createElement("DIV");
@@ -40,16 +39,8 @@ let TickTackToe=µ.Class(µ.gs.Game,{
 	{
 		if(!this.list.consumeControllerChange(event)&&event.type==="button")
 		{
-			//*
 			let analysis=this.analyzer.analyze(event);
-			if(analysis.pressed&&analysis.pressChanged)
-			/*/
-			let index=event.index+1;
-			let nextState;
-			if(event.value.pressed) nextState=this.buttonPressed|index;
-			else nextState=this.buttonPressed&~index;
-			if(!this.buttonPressed && nextState)
-			//*/
+			if(analysis.pressedDown)
 			{// accept button press
 				if(this.domElement.classList.contains("congratulation"))
 				{
@@ -71,7 +62,6 @@ let TickTackToe=µ.Class(µ.gs.Game,{
 					}
 				}
 			}
-			//this.buttonPressed=nextState;
 		}
 	},
 	calcSize()

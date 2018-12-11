@@ -15,13 +15,26 @@ let ResourceWar=µ.Class(µ.gs.Game,{
 		this.menu=new SC.list(this.maps,(e,d)=>e.textContent=d.name,{columns:1});
 		this.domElement.appendChild(this.menu.domElement);
 		this.map=null;
-
-		//this.map.loadLevel("test");
+		this.analyzer=new µ.gs.Controller.Analyzer();
 	},
 	onControllerChange(event)
 	{
 		if(this.map) this.map.consumeControllerChange(event);
-		else this.menu.consumeControllerChange(event);
+		else if (!this.menu.consumeControllerChange(event)&&event.type==="button")
+		{
+			let analysis=this.analyzer.analyze(event);
+			if(analysis.pressed&&analysis.pressChanged)
+			{// accept button pressed
+				this.map=new ResourceWar.Map();
+				this.menu.domElement.remove();
+				this.map.loadLevel(this.maps[this.menu.active].file)
+				.then(()=>
+				{
+					this.domElement.appendChild(this.map.domElement);
+					this.map.setPause(this.pause)
+				},µ.logger.error);
+			}
+		}
 	},
 	setPause(value)
 	{
@@ -30,10 +43,10 @@ let ResourceWar=µ.Class(µ.gs.Game,{
 	}
 });
 ResourceWar.Map=µ.Class(µ.gs.Component,{
-	constructor:function()
+	constructor:function({controllerMappings=ResourceWar.Map.SINGLE_CONTROLLER_MAPPING}={})
 	{
 		µ.util.function.rescope.all(this,["loop"]);
-		this.mega();
+		this.mega(controllerMappings);
 
 		this.time=0;
 		this.pause=true;
@@ -46,7 +59,7 @@ ResourceWar.Map=µ.Class(µ.gs.Component,{
 		this.loopId=null;
 		this.lastTime=null;
 
-		this.player=new ResourceWar.Player({team:1,map:this});
+		this.players=[new ResourceWar.Player({team:1,map:this})];
 		this.npcs=[];
 	},
 	setPause(value)
@@ -100,17 +113,21 @@ ResourceWar.Map=µ.Class(µ.gs.Component,{
 			}
 			this.course.addItems(this.generators);
 
-			this.course.addItem(this.player.cursor);
-			this.player.setActive(firstActive);
+			//TODO players
+			this.course.addItem(this.players[0].cursor);
+			this.players[0].setActive(firstActive);
 			for (let team of otherTeams)
 			{
 				this.npcs.push(new ResourceWar.Npc({team:team}));
 			}
+			return this;
 		});
 	},
-	consumeControllerChange(event)
-	{
-		this.player.consumeControllerChange(event);
+	actions:{
+		playerAction(event,index)
+		{
+			this.players[index].consumeControllerChange(event);
+		}
 	},
 	loop(timeNow)
 	{
@@ -151,7 +168,13 @@ ResourceWar.Map=µ.Class(µ.gs.Component,{
 		packageItem.destroy();
 	}
 });
-ResourceWar.loadedLevels=new Map();
+ResourceWar.Map.SINGLE_CONTROLLER_MAPPING={
+	"*":{
+		"*":{
+			"*":{action:"playerAction",data:0}
+		}
+	}
+};
 
 ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 	generatorID:0,
@@ -329,10 +352,11 @@ ResourceWar.Generator=µ.Class(µ.gs.Component.Course.Svg.Item,{
 			this.generate();
 		}
 
+		//TODO find team overrideTarget
 		let target=this.target;
-		if(this.team===map.player.team&&map.player.overrideTargets&&map.player.active!==this)
+		if(this.team===map.players[0].team&&map.players[0].overrideTarget&&map.players[0].active!==this)
 		{
-			target=map.player.active;
+			target=map.players[0].active;
 		}
 
 		if(this.nextPackageTime<map.time&&target!=null&&this.canFirePackage())
@@ -447,35 +471,24 @@ ResourceWar.Cursor=µ.Class(µ.gs.Component.Course.Svg.Item,{
 ResourceWar.Player=µ.Class(µ.gs.Component,{
 	constructor:function(param={})
 	{
-		this.mega(new Map([[null,{
-			stick:{
-				null:{
-					action:"moveActive"
-				}
-			},
-			button:{
-				0:{
-					action:"select"
+		this.mega({
+			"*":{
+				stick:{
+					"*":{action:"moveActive"}
 				},
-				1:{
-					action:"setTarget"
-				},
-				4:{
-					action:"clearTargets"
-				},
-				5:{
-					action:"targetOverride"
-				},
-				null:{
-					action:"action"
+				button:{
+					0:{action:"select"},
+					1:{action:"setTarget"},
+					4:{action:"clearTargets"},
+					5:{action:"targetOverride"}
 				}
 			}
-		}]]));
+		});
 		this.map=null;
 		this.active=null;
 		this.team=param.team;
 		this.cursor=new ResourceWar.Cursor({team:param.team});
-		this.overrideTargets=false;
+		this.overrideTarget=false;
 		if(param.map) this.setMap(param.map)
 	},
 	setMap(map)
@@ -491,25 +504,26 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 	actions:{
 		moveActive(event)
 		{
-			let value=Math.sqrt(event.value.x**2+event.value.y**2);
-			if(value<.5) return false;
-			let angle=Math.atan2(-event.value.y,event.value.x);
+			let analysis=this.analyzer.analyze(event);
+			if(!analysis.pressedDown) return;
+
 			let distance=null;
 			let nextTarget=null;
+
 			for(let item of this.map.generators)
 			{
 				if(item===this.active) continue;
 
 				let relativeX=item.x-this.active.x;
 				let relativeY=item.y-this.active.y;
-				let itemAngle=Math.atan2(relativeY,relativeX);
-				let diff=Math.abs(angle-itemAngle);
+				let itemAngle=Math.atan2(relativeX,-relativeY);
+				let diff=Math.abs(analysis.direction-itemAngle);
 				if(diff>Math.PI) diff=Math.PI*2-diff;
 
 				if(diff>Math.PI/4) continue;
 
 				let itemDistance=Math.sqrt(relativeX**2+relativeY**2);
-				if(distance==null||itemDistance<distance)
+				if(nextTarget==null||itemDistance<distance)
 				{
 					distance=itemDistance;
 					nextTarget=item;
@@ -522,43 +536,40 @@ ResourceWar.Player=µ.Class(µ.gs.Component,{
 		},
 		select(event)
 		{
-			if(this._acceptButton(event))
+			if(!this.analyzer.analyze(event).pressedDown) return;
+
+			if(this.active.team!==this.team) return;
+			if(this.selected!=null)
 			{
-				if(this.active.element.dataset.team!==this.team) return false;
-				if(this.selected!=null)
-				{
-					this.selected.element.classList.remove("selected");
-				}
-				this.active.element.classList.add("selected");
-				this.selected=this.active;
+				this.selected.element.classList.remove("selected");
 			}
+			this.active.element.classList.add("selected");
+			this.selected=this.active;
 		},
 		setTarget(event)
 		{
-			if(this._acceptButton(event))
+			if(!this.analyzer.analyze(event).pressedDown) return;
+
+			if(this.selected&&this.active.team!==this.selected)
 			{
-				if(this.selected&&this.active.team!==this.selected)
-				{
-					this.selected.setTarget(this.active);
-				}
+				this.selected.setTarget(this.active);
 			}
 		},
 		clearTargets(event)
 		{
-			if(this._acceptButton(event))
+			if(!this.analyzer.analyze(event).pressedDown) return;
+
+			for(let item of this.map.generators)
 			{
-				for(let item of this.map.generators)
+				if(item.team===this.team)
 				{
-					if(item.team===this.team)
-					{
-						item.setTarget(null);
-					}
+					item.setTarget(null);
 				}
 			}
 		},
 		targetOverride(event)
 		{
-			this.overrideTargets=event.value.pressed;
+			this.overrideTarget=this.analyzer.analyze(event).pressed;
 		}
 	}
 });

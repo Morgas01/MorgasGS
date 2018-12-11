@@ -29,7 +29,7 @@ let Snake=µ.Class(µ.gs.Game,{
 	{
 		if(event.type==="stick")
 		{
-			this.player.setDirection(event.value.x,event.value.y,this.lastTime);
+			this.player.setDirection(event.value.x.value,event.value.y.value,this.lastTime);
 		}
 	},
 	loop(time)

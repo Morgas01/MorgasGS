@@ -56,22 +56,16 @@
 	 * µ.logger.out will be called with (verbose level, [messages...])
 	 */
 	µ.logger={
-		log:function(verbose,msg/*,msg...*/)
+		log:function(verbose,...msgs)
 		{
-			if(!verbose||verbose<=0)
-			{
-				return;
-			}
+			if(!verbose||verbose<=0) return;
 			if(µ.logger.verbose>=verbose)
 			{
-				if(typeof msg == "function") msg=[].concat(msg());
-				else msg=Array.prototype.slice.call(arguments,1);
-
-				µ.logger.out(verbose,msg);
+				µ.logger.out(verbose,msgs);
 			}
 		},
 		LEVEL:{
-				//off:0,
+				//off:0, - set after log method generation
 				error:10,
 				warn:20,
 				info:30,
@@ -82,10 +76,10 @@
 		getLevel:function(){return µ.logger.verbose},
 		setLevel:function(level){µ.logger.verbose=level},
 		/**
-		 * @param {number}	verbose
-		 * @param {any[]}	msg
+		 * @param {Number}	verbose
+		 * @param {Array}	msgs
 		 */
-		out:function(verbose,msg)
+		out:function(verbose,msgs)
 		{
 			var fn;
 			if(verbose<=µ.logger.LEVEL.error) fn=console.error;
@@ -93,7 +87,7 @@
 			else if(verbose<=µ.logger.LEVEL.info) fn=console.info;
 			else fn=console.log;
 
-			fn.apply(console,msg);
+			fn.apply(console,msgs);
 		}
 	};
 	//create methods for each level (e.g. µ.logger.warn)
@@ -108,14 +102,13 @@
 	µ.logger.LEVEL.off=0;
 
 	/** shortcut
-	 * creates an object that will evaluate its values defined in {map} on its first call.
-	 * when {context} is provided and {map.value} is not a function it will treated as a path from {context}
+	 * creates/modifies an object that will evaluate its values defined in {map} on its first call.
 	 *
-	 * uses goPath
 	 *
-	 * map:	{key:("moduleOrPath",function)}
-	 * context: any (optional)
-	 * target: {} (optional)
+	 * @param {Object} map	-	{key:("moduleOrPath",function)}
+	 * @param {Object} [target={}]	-	{} (optional)
+	 * @param {Any} [context] - argument for getter functions
+	 * @param {Boolean} {dynamic=false] - don't cache evaluations
 	 *
 	 * returns {key:value}
 	 */
@@ -127,31 +120,20 @@
 		}
 		Object.entries(map).forEach(([key,path])=>
 		{
-			let value=undefined;
 			Object.defineProperty(target,key,{
 				configurable:true,
 				enumerable:true,
 				get:function()
 				{
-					if(value==null||dynamic)
-					{
-						if(typeof path=="function")
-						{
-							value=path(context);
-						}
-						else if (µ.hasModule(path))
-						{
-							value=µ.getModule(path);
-						}
-						else
-						{
-							throw new ReferenceError("#shortcut:001 could not evaluate "+path);
-						}
-					}
+					let value=undefined;
+
+					if(typeof path=="function") value=path.call(this,context);
+					else if (µ.hasModule(path)) value=µ.getModule(path);
+					else throw new ReferenceError("#shortcut:001 could not evaluate "+path);
+
 					if(value!=null&&!dynamic)
 					{//replace getter with actual value
-						delete target[key];
-						target[key]=value;
+						Object.defineProperty(this,key,{value});
 					}
 					return value;
 				}
