@@ -87,47 +87,30 @@
 		}
 		return Object.defineProperties(obj,cachedProps);
 	};
-	let ResultBase=cachedProperties({
+	let ResultBase=µ.shortcut({
 		/**
-		 * button is pressed
-		 * @type {Boolean}
-		 */
-		pressed:null,
-		/**
-		 * distance of axis or stick
-		 * @type {Number}
-		 */
-		distance:null,
-		/**
-		 * direction of axis: -1,0,1
-		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
-		 * @type {Number}
-		 */
-		direction:null,
-		/**
-		 * button was pressed
-		 * @type {Boolean}
-		 */
-		oldPressed:null,
-		/**
-		 * distance of axis or stick
-		 * @type {Number}
-		 */
-		OldDistance:null,
-		/**
-		 * direction of axis: -1,0,1
-		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
-		 * @type {Number}
-		 */
-		oldDirection:null,
-	},{
-		/**
-		 * button's pressed state changed
+		 * input pressed state changed
 		 * @type {Boolean}
 		 */
 		pressChanged()
 		{
 			return this.pressed!==this.oldPressed;
+		},
+		/**
+		 * input is pressed now
+		 * @type {Boolean}
+		 */
+		pressedDown()
+		{
+			return this.pressed&&this.pressChanged;
+		},
+		/**
+		 * input is no longer pressed now
+		 * @type {Boolean}
+		 */
+		pressedUp()
+		{
+			return !this.pressed&&this.pressChanged;
 		},
 		/**
 		 * direction of stick reduced to 16 facets (-8 - +8)
@@ -179,6 +162,39 @@
 		{
 			return this.direction4!==this.oldDirection4&&(this.direction4!==2||this.direction4!==-2)
 		}
+	},{
+		/**
+		 * button is pressed
+		 * @type {Boolean}
+		 */
+		pressed:null,
+		/**
+		 * distance of axis or stick
+		 * @type {Number}
+		 */
+		distance:null,
+		/**
+		 * direction of axis: -1,0,1
+		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+		 * @type {Number}
+		 */
+		direction:null,
+		/**
+		 * button was pressed
+		 * @type {Boolean}
+		 */
+		oldPressed:null,
+		/**
+		 * distance of axis or stick
+		 * @type {Number}
+		 */
+		OldDistance:null,
+		/**
+		 * direction of axis: -1,0,1
+		 * direction of stick: -𝛑 - +𝛑 where 0 is up and positive is right
+		 * @type {Number}
+		 */
+		oldDirection:null,
 	});
 
 	SMOD("gs.Con.Analyzer",Analyzer);
