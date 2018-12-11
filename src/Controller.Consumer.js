@@ -64,21 +64,17 @@
 		 */
 		consumeControllerChange(event)
 		{
-			let mapping=this.mapping[event.controllerID];
-			if(!mapping)
+			let task=this.mapping;
+			for(let key of [event.controllerID,event.type,event.index])
 			{
-				mapping=this.mapping["*"];
+				task=task[key]||task["*"];
+				if(!task) return;
 			}
-			if(mapping&&mapping[event.type])
+			if(task.action in this.actions)
 			{
-				let typeMapping=mapping[event.type];
-				let task=typeMapping[event.index]||typeMapping["*"];
-				if(task&&task.action in this.actions)
-				{
-					let action=this.actions[task.action];
-					action.call(this.instance,event,task.data);
-					return true;
-				}
+				let action=this.actions[task.action];
+				action.call(this.instance,event,task.data);
+				return true;
 			}
 			return false;
 		}
