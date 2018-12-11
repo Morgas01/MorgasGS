@@ -28,10 +28,10 @@
 		},
         setValue(value)
         {
+        	this.oldValue=this.value;
         	if(value==null) return false;
         	value=Math.min(Math.max(value*this.scale+this.correction,this.min),this.max);
         	if(this.value==value) return false;
-        	this.oldValue=this.value;
 			this.value=value;
 			return true;
         },
