@@ -6,6 +6,26 @@
 	<script src="../../build/MorgasGS-0.8.3.js"></script>
 	<link rel="stylesheet" href="../../build/MorgasGS-0.8.3.css">
 	<script>//<!--
+		/**
+		 * loads scripts in that order respectively.
+		 * nested arrays will be loaded async
+		 * @param {String[]|Array.<String[]>} paths
+		 */
+		let loadScripts=function(paths)
+		{
+			return µ.Promise.chain(paths,function(path)
+			{
+				if(Array.isArray(path)) return loadScripts(path);
+				return new Promise(function(resolve,reject)
+				{
+					let element=document.createElement("script");
+					element.src=path;
+					element.onload=resolve;
+					element.onerror=reject;
+					document.head.appendChild(element);
+				});
+			});
+		};
 		document.write(`<script defer src="${µ.util.queryParam.game}.js"></script>`);
 		document.write(`<link rel="stylesheet" href="${µ.util.queryParam.game}.css">`);
 	//--></script>
