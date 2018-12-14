@@ -27,14 +27,17 @@
 			this.mega(param);
 
 			this.mapping=new Map();
+			// map to hold key values for sticks to delay and gather them (allowing diagonals)
+			this.stickDelays=new Map();
+			this.stickDelay=30;
 
-
+			if("stickDelay" in param) this.stickDelay=param.stickDelay;
 			if(param.mappings) this.associate(param.mappings);
 
 			let {
 				generateButtons=this.buttons.length==0,
 				generateAxes=this.axes.length==0,
-				generateSticks=this.sticks.length==0
+				generateSticks=this.sticks.length==0,
 			}=param;
 
 			if(generateButtons) this.generateButtons();
@@ -163,6 +166,31 @@
 				}
 			}
 			return false;
+		},
+		setStick(index,x,y)
+		{
+			if(index<0||index>=this.sticks.length)
+			{
+				µ.logger.error(`#gs.Con.Keyboard:001 index out of bounds (stick ${index})`);
+				return;
+			}
+			if(!this.stickDelays.has(index))
+			{
+				let data={x,y};
+				this.stickDelays.set(index,data);
+				setTimeout(()=>
+				{
+					Controller.prototype.setStick.call(this,index,data.x,data.y);
+					this.stickDelays.delete(index);
+				},this.stickDelay);
+			}
+			else
+			{
+				let data=this.stickDelays.get(index);
+				if(x!=null) data.x=x;
+				if(y!=null) data.y=y;
+			}
+			return true;
 		},
 		toJSON()
 		{

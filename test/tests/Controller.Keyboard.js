@@ -31,15 +31,17 @@ module("Controller.Keyboard",[
 
 		let listener=function(event)
 		{
-			ctrl.parseEvent(event);
-			event.preventDefault();
+			if(ctrl.parseEvent(event))
+			{
+				event.preventDefault();
+			}
 		};
 		textarea.addEventListener("keydown",listener,false);
 		textarea.addEventListener("keyup",listener,false);
 
 		ctrl.addEventListener("controllerChange",null,function(event)
 		{
-			textarea.value=JSON.stringify(event);
+			textarea.value=JSON.stringify(event)+"\n";
 		});
 
 	},

@@ -88,6 +88,7 @@
 			if(button.setValue(value))
 			{
 				this.reportEvent(new gs.Controller.ChangeEvent(this,"button",index,button.getState()));
+				return true;
 			}
 		},
 		setAxis:function(index,value)
@@ -101,6 +102,7 @@
 			if(axis.setValue(value))
 			{
 				this.reportEvent(new gs.Controller.ChangeEvent(this,"axis",index,axis.getState()));
+				return true;
 			}
 		},
 		setStick:function(index,valueX,valueY)
@@ -114,6 +116,7 @@
 			if(stick.setValue(valueX,valueY))
 			{
 				this.reportEvent(new gs.Controller.ChangeEvent(this,"stick",index,stick.getState()));
+				return true;
 			}
 		},
 		toJSON()
