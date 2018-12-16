@@ -1929,10 +1929,11 @@
 			let task=this.mapping;
 			for(let key of [event.controllerID,event.type,event.index])
 			{
-				task=task[key]||task["*"];
-				if(!task) return;
+				let step=task[key]||task["*"];
+				if(!step) break;
+				task=step;
 			}
-			if(task.action in this.actions)
+			if(task.action&&task.action in this.actions)
 			{
 				let action=this.actions[task.action];
 				action.call(this.instance,event,task.data);
@@ -2122,6 +2123,12 @@
 			this.movement.method.call(this);
 			this.movement.timer=setTimeout(this._step,this.movement.currentTime);
 			this.movement.currentTime=Math.max(List.MIN_MOVEMENT_TIMEOUT,this.movement.currentTime/List.MOVEMENT_ACCELERATION);
+		},
+		destroy()
+		{
+			this._stopMovement();
+			this.domElement.remove();
+			this.mega();
 		}
 	});
 

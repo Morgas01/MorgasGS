@@ -136,6 +136,12 @@
 			this.movement.method.call(this);
 			this.movement.timer=setTimeout(this._step,this.movement.currentTime);
 			this.movement.currentTime=Math.max(List.MIN_MOVEMENT_TIMEOUT,this.movement.currentTime/List.MOVEMENT_ACCELERATION);
+		},
+		destroy()
+		{
+			this._stopMovement();
+			this.domElement.remove();
+			this.mega();
 		}
 	});
 

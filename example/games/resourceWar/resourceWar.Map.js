@@ -12,6 +12,7 @@
 			this.mega(controllerMappings);
 
 			this.time=0;
+			this.end=false;// game ended
 			this.pause=true;
 			this.course=new µ.gs.Component.Course.Svg();
 			this.domElement=this.course.domElement;
@@ -24,10 +25,11 @@
 
 			this.players=[new ResourceWar.Player({team:1,map:this})];
 			this.npcs=[];
+			this.teamGeneratorCounts={};
 		},
 		setPause(value)
 		{
-			this.pause=!!value;
+			this.pause=!!value||this.end;
 			if(this.pause)
 			{
 				cancelAnimationFrame(this.loopId);
@@ -67,10 +69,14 @@
 					if(item.team===1)
 					{
 						firstActive=item;
+						if(!this.teamGeneratorCounts[item.team])this.teamGeneratorCounts[item.team]=0;
+						this.teamGeneratorCounts[item.team]++;
 					}
 					else if (item.team!=null)
 					{
 						otherTeams.add(item.team);
+						if(!this.teamGeneratorCounts[item.team])this.teamGeneratorCounts[item.team]=0;
+						this.teamGeneratorCounts[item.team]++;
 					}
 					this.generators.push(item);
 				}
@@ -129,14 +135,25 @@
 			this.course.removeItem(packageItem);
 			SC.remove(this.packages,packageItem);
 			packageItem.destroy();
+		},
+		checkWin(oldTeam,newTeam)
+		{
+			this.teamGeneratorCounts[newTeam]++;
+			if(oldTeam!==null)
+			{
+				this.teamGeneratorCounts[oldTeam]--;
+				for(let [team,count] of Object.entries(this.teamGeneratorCounts))
+				{
+					if(count>0&&team!=newTeam) return;
+				}
+				//WIN
+				this.setPause(this.end=true);
+
+			}
 		}
 	});
 	ResourceWar.Map.SINGLE_CONTROLLER_MAPPING={
-		"*":{
-			"*":{
-				"*":{action:"playerAction",data:0}
-			}
-		}
+		"*":{action:"playerAction",data:0}
 	};
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

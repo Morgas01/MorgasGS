@@ -149,10 +149,12 @@
 				this.resources-=packageItem.attack;
 				if(this.resources<=0)
 				{
+					let oldTeam=this.team;
 					this.resources=-this.resources;
 					this.team=packageItem.team;
 					this.setTarget(null);
 					this.nextGenerationTime=map.time+this.generationRate;
+					map.checkWin(oldTeam,this.team);
 				}
 			}
 			this.adjustGenerationTime(packageItem.team);
@@ -190,7 +192,7 @@
 				this.createPackage(map,target);
 				if(this.nextPackageTime+this.packageRate<map.time)
 				{
-					this.nextPackageTime=map.time;
+					this.nextPackageTime=map.time+this.packageRate;
 				}
 				this.nextPackageTime+=this.packageRate;
 			}

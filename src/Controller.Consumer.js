@@ -67,10 +67,11 @@
 			let task=this.mapping;
 			for(let key of [event.controllerID,event.type,event.index])
 			{
-				task=task[key]||task["*"];
-				if(!task) return;
+				let step=task[key]||task["*"];
+				if(!step) break;
+				task=step;
 			}
-			if(task.action in this.actions)
+			if(task.action&&task.action in this.actions)
 			{
 				let action=this.actions[task.action];
 				action.call(this.instance,event,task.data);
