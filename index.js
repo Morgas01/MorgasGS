@@ -1,4 +1,4 @@
-var path=require("path");
+let path=require("path");
 
 exports.dirname=path.resolve(__dirname,"src");
 

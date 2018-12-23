@@ -14,7 +14,8 @@
 				"resourceWar/resourceWar.Package.js",
 				"resourceWar/resourceWar.Cursor.js",
 				"resourceWar/resourceWar.Player.js",
-				"resourceWar/resourceWar.Npc.js"
+				"resourceWar/resourceWar.Npc.js",
+				"resourceWar/resourceWar.MapEndScreen.js"
 			]
 		])
 	])

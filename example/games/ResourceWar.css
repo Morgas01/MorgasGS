@@ -57,14 +57,16 @@
 .Package {
     fill:var(--team-color);
 }
+.List {
+	margin:1em;
+}
 .List > div {
 	border:.5ex solid white;
 	border-radius: 1ex;
 	background: chocolate;
 	color: black;
-	padding: 1ex 1em;
-	margin: 1em;
-	font-size: 2em;
+	padding: .25ex .5ex;
+	margin: .5ex;
 	text-align: center;
 }
 .List > div.active {
@@ -76,4 +78,18 @@
 	position:absolute;
 	right:calc(100% + 1ex);
 	color: white;
+}
+.levelMenu {
+	font-size:2em;
+}
+.mapEndScreen {
+	position:absolute;
+	top:50%;
+	left:50%;
+	transform:translate(-50%,-50%);
+	background:black;
+	padding:1ex;
+	border-radius:1em;
+	color:white;
+	text-align:center;
 }

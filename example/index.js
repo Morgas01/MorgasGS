@@ -55,4 +55,5 @@ document.getElementById("goBtn").addEventListener("click",function()
 if(µ.util.queryParam.game)
 {
 	loadGame(µ.util.queryParam.game);
+	gameSelect.value=µ.util.queryParam.game;
 }

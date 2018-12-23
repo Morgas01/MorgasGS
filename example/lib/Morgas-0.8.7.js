@@ -1,5 +1,5 @@
 ﻿(function MorgasInit(oldµ){
-	Morgas={version:"0.8.3"};
+	Morgas={version:"0.8.7"};
 	µ=Morgas;
 	/**
 	 * revert "µ" to its old value
@@ -1143,7 +1143,7 @@
 						{
 							db.close();
 							//TODO replace with Array.slice
-							signal.resolve(Array.prototype.slice.call(arguments));
+							signal.resolve(Array.from(arguments));
 						},µ.logger.error);
 					});
 				}
@@ -2591,7 +2591,7 @@
 		else if(Number.isNaN(pattern)) return "[Number.NaN]";
 		else if (pattern===Number.NEGATIVE_INFINITY) return "[Number.NEGATIVE_INFINITY]";
 		else if (pattern===Number.POSITIVE_INFINITY) return "[Number.POSITIVE_INFINITY]";
-		else if (Array.isArray(pattern)) return Array.prototype.map.call(pattern,patternToJSON);
+		else if (Array.isArray(pattern)) return pattern.map(patternToJSON);
 		else
 		{
 			switch(typeof pattern)
@@ -4485,7 +4485,7 @@
 	let cSym=µ.Class.symbols;
 
 	let firstLowerCase=/^[a-z]/;
-	let alphabetic=/^[a-zA-Z]+$/;
+	let eventNamePattern=/^[a-z_][a-zA-Z_.:\-@#]+$/;
 	let abstractImplementor=function(name)
 	{
 		if(typeof name==="string")
@@ -4502,9 +4502,8 @@
 		{
 			let sProt=sub.prototype;
 			if(!sProt.hasOwnProperty("name")||!sProt.name) throw new SyntaxError("#Event:001 Event has no name");
-			if(!sProt.name.match(firstLowerCase)) throw new RangeError("#Event:002 Event name must start lower case");
-			if(!sProt.name.match(alphabetic)) throw new RangeError("#Event:003 Event name must only consist of alphabetic characters");
-			if(eventClassesMap.has(sProt.name)) throw new RangeError("#Event:004 Event name must be unique");
+			if(!sProt.name.match(eventNamePattern)) throw new RangeError("#Event:002 Event name does not match pattern "+eventNamePattern);
+			if(eventClassesMap.has(sProt.name)) throw new RangeError("#Event:003 Event name must be unique");
 
 			eventClassesMap.set(sProt.name,sProt.constructor);
 		},
@@ -4752,6 +4751,7 @@
 		{
 			if(!this.eventMap.has(event.constructor)) throw new ReferenceError(`#ReporterPatch:004 tried to report unintroduced Event ${event.name}`);
 			this.eventMap.get(event.constructor).report(event,fn);
+			return event.phase!==µ.Event.CancelEvent.phases.CHECK;
 		},
 		destroy()
 		{
@@ -4963,7 +4963,7 @@
 		args=[].concat(args);
 		return function vow()
 		{
-			let vArgs=args.concat(Array.prototype.slice.call(arguments));
+			let vArgs=args.concat(Array.from(arguments));
 			return new PROM(fn,{args:vArgs,scope:scope});
 		}
 	};
@@ -5318,4 +5318,4 @@
 	SMOD("Worker",WORKER);
 	
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-//# sourceMappingURL=Morgas-0.8.3.js.map
+//# sourceMappingURL=Morgas-0.8.7.js.map

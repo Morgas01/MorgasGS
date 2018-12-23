@@ -158,10 +158,12 @@
 	},
 	"gs.Comp.List": {
 		"deps": [
-			"gs.Component"
+			"gs.Component",
+			"Event"
 		],
 		"uses": [
-			"rescope"
+			"rescope",
+			"EventReporterPatch"
 		]
 	}
 }

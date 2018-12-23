@@ -1,8 +1,11 @@
 (function(µ,SMOD,GMOD,HMOD,SC)
 {
+	let Event=GMOD("Event");
+
 	SC=SC({
 		rq:"request",
-		remove:"array.remove"
+		remove:"array.remove",
+		Reporter:"EventReporterPatch"
 	});
 
 	ResourceWar.Map=µ.Class(µ.gs.Component,{
@@ -10,6 +13,8 @@
 		{
 			µ.util.function.rescope.all(this,["loop"]);
 			this.mega(controllerMappings);
+
+			new SC.Reporter(this,[ResourceWar.Map.StopEvent]);
 
 			this.time=0;
 			this.end=false;// game ended
@@ -148,12 +153,25 @@
 				}
 				//WIN
 				this.setPause(this.end=true);
-
+				this.reportEvent(new ResourceWar.Map.StopEvent(newTeam));
 			}
+		},
+		destroy()
+		{
+			this.course.destroy();
+			this.mega();
 		}
 	});
 	ResourceWar.Map.SINGLE_CONTROLLER_MAPPING={
 		"*":{action:"playerAction",data:0}
 	};
+	ResourceWar.Map.StopEvent=µ.Class(Event,
+	{
+		name:"mapStop",
+		constructor:function(winner)
+		{
+			this.winner=winner;
+		}
+	});
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

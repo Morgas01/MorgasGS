@@ -92,6 +92,11 @@
 		update()
 		{
 			this.element.setAttribute("transform",`translate(${this.x} ${this.y})`);
+		},
+		destroy()
+		{
+			this.element.remove();
+			this.mega();
 		}
 	});
 

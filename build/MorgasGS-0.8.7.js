@@ -1988,9 +1988,11 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
 	let Component=GMOD("gs.Component");
+	let Event=GMOD("Event");
 
 	SC=SC({
-		rs:"rescope"
+		rs:"rescope",
+		Reporter:"EventReporterPatch"
 	});
 
 	let List=Component.List=µ.Class(Component,{
@@ -1999,6 +2001,7 @@
 			SC.rs.all(this,["_step"]);
 
 			this.mega(controllerMappings,{stickThreshold:threshold});
+			let reporter=new SC.Reporter(this,[List.SelectEvent]);
 
 			this.columns=1;
 			this.data=data;
@@ -2068,6 +2071,17 @@
 					this._stopMovement();
 					this.movement.method=method;
 					this._step();
+				}
+			},
+			select(buttonEvent)
+			{
+				let analysis=this.analyzer.analyze(buttonEvent);
+				if(analysis.pressedDown&&this.active>=0&&this.active<this.data.length)
+				{
+					let index=this.active;
+					let dom=this.domElement.children[index];
+					let data=this.data[index];
+					return this.reportEvent(new List.SelectEvent(index,dom,data));
 				}
 			}
 		},
@@ -2142,14 +2156,22 @@
 	List.STD_MAPPER=(e,d)=>e.textContent=d;
 	List.STD_CONTROLLER_MAPPINGS={
 		"*":{
-			"stick":{
-				"*":{action:"move"}
-			}
+			"stick":{action:"move"},
+			"button":{action:"select"}
 		}
 	};
 	List.INITIAL_MOVEMENT_TIMEOUT=750;
 	List.MIN_MOVEMENT_TIMEOUT=75;
 	List.MOVEMENT_ACCELERATION=1.25;
+	List.SelectEvent=µ.Class(Event,{
+		name:"gs.Select",
+		constructor:function(index,dom,data)
+		{
+			this.index=index;
+			this.dom=dom;
+			this.data=data;
+		}
+	});
 
 	SMOD("gs.Comp.List",List);
 
@@ -2191,6 +2213,12 @@
 		{
 			if(!items) return;
 			for(let item of items) this.removeItem(item);
+		},
+		destroy()
+		{
+			for(let item of this.items) item.destroy();
+			this.domElement.remove();
+			this.mega();
 		}
 	});
 
@@ -2217,10 +2245,6 @@
 		move(x=0,y=0)
 		{
 			this.setPosition(this.x+x,this.y+y);
-		},
-		destroy()
-		{
-			this.mega();
 		}
 	});
 	/** keep back references from elements to instances */
@@ -2325,6 +2349,11 @@
 		update()
 		{
 			this.element.setAttribute("transform",`translate(${this.x} ${this.y})`);
+		},
+		destroy()
+		{
+			this.element.remove();
+			this.mega();
 		}
 	});
 
@@ -2420,4 +2449,4 @@
 	SMOD("gs.Button",gs.Button);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-//# sourceMappingURL=MorgasGS-0.8.3.js.map
+//# sourceMappingURL=MorgasGS-0.8.7.js.map

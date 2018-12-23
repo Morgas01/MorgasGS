@@ -25,6 +25,8 @@ let TickTackToe=µ.Class(µ.gs.Game,{
 		this.restart();
 		this.calcSize();
 		window.addEventListener("resize",()=>this.calcSize());
+
+		this.list.addEventListener("gs.Select",this,this.onSelect);
 	},
 	restart()
 	{
@@ -39,29 +41,32 @@ let TickTackToe=µ.Class(µ.gs.Game,{
 	{
 		if(!this.list.consumeControllerChange(event)&&event.type==="button")
 		{
-			let analysis=this.analyzer.analyze(event);
-			if(analysis.pressedDown)
-			{// accept button press
-				if(this.domElement.classList.contains("congratulation"))
-				{
-					this.restart();
-				}
-				else if(!this.data[this.list.active])
-				{
-					this.data[this.list.active]=this.turn;
-					this.turn=this.turn%2+1;
-					this.list.update();
-					let won=this.checkWin();
-					if(won!=0)
-					{
-						this.showCongratulation(won);
-					}
-					else if(this.checkFull())
-					{
-						this.restart();
-					}
-				}
+		}
+	},
+	onSelect(selectEvent)
+	{
+		if(this.domElement.classList.contains("congratulation"))
+		{
+			this.restart();
+		}
+		else if(!selectEvent.data)
+		{
+			this.data[selectEvent.index]=this.turn;
+			this.turn=this.turn%2+1;
+			this.list.update();
+			let won=this.checkWin();
+			if(won!=0)
+			{
+				this.showCongratulation(won);
 			}
+			else if(this.checkFull())
+			{
+				this.restart();
+			}
+		}
+		else if(this.checkFull())
+		{
+			this.restart();
 		}
 	},
 	calcSize()

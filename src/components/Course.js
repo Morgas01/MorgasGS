@@ -34,6 +34,12 @@
 		{
 			if(!items) return;
 			for(let item of items) this.removeItem(item);
+		},
+		destroy()
+		{
+			for(let item of this.items) item.destroy();
+			this.domElement.remove();
+			this.mega();
 		}
 	});
 
@@ -60,10 +66,6 @@
 		move(x=0,y=0)
 		{
 			this.setPosition(this.x+x,this.y+y);
-		},
-		destroy()
-		{
-			this.mega();
 		}
 	});
 	/** keep back references from elements to instances */
