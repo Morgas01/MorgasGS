@@ -16,29 +16,6 @@
 			"gs.Con.Analyzer"
 		]
 	},
-	"gs.Con.Analyzer": {
-		"deps": [
-			"gs.Controller"
-		],
-		"uses": []
-	},
-	"gs.Con.Consumer": {
-		"deps": [
-			"gs.Controller",
-			"Patch"
-		],
-		"uses": []
-	},
-	"gs.Con.Gamepad": {
-		"deps": [
-			"gs.Controller"
-		],
-		"uses": [
-			"gs.Button",
-			"gs.Axis",
-			"gs.Stick"
-		]
-	},
 	"gs.Controller": {
 		"deps": [
 			"Event"
@@ -52,78 +29,15 @@
 			"gs.Stick"
 		]
 	},
-	"gs.Con.Keyboard": {
-		"deps": [
-			"gs.Controller"
-		],
-		"uses": [
-			"gs.Button",
-			"gs.Axis",
-			"gs.Stick"
-		]
-	},
-	"gs.Game.ControllerConfig": {
-		"deps": [
-			"gs.Game"
-		],
-		"uses": [
-			"rescope",
-			"gs.Con.Keyboard",
-			"gs.Con.Gamepad"
-		]
-	},
-	"gs.Game.Embed": {
-		"deps": [
-			"gs.Game"
-		],
-		"uses": [
-			"rescope",
-			"Promise"
-		]
-	},
 	"gs.Game": {
 		"deps": [],
 		"uses": []
-	},
-	"gs.Game.Remote": {
-		"deps": [
-			"gs.Game"
-		],
-		"uses": [
-			"rescope"
-		]
-	},
-	"gs.Game.SystemSettings": {
-		"deps": [
-			"gs.Game"
-		],
-		"uses": [
-			"rescope",
-			"gs.Game.ControllerConfig"
-		]
 	},
 	"gs.GameSave": {
 		"deps": [
 			"DBObj"
 		],
 		"uses": []
-	},
-	"gs.MemCon": {
-		"deps": [
-			"gs.MemoryCard"
-		],
-		"uses": [
-			"ObjectConnector",
-			"gs.GameSave"
-		]
-	},
-	"gs.MemCon.Object": {
-		"deps": [
-			"gs.MemCon"
-		],
-		"uses": [
-			"ObjectConnector"
-		]
 	},
 	"gs.MemoryCard": {
 		"deps": [],
@@ -164,6 +78,92 @@
 		"uses": [
 			"rescope",
 			"EventReporterPatch"
+		]
+	},
+	"gs.Con.Analyzer": {
+		"deps": [
+			"gs.Controller"
+		],
+		"uses": []
+	},
+	"gs.Con.Consumer": {
+		"deps": [
+			"gs.Controller",
+			"Patch"
+		],
+		"uses": []
+	},
+	"gs.Con.Gamepad": {
+		"deps": [
+			"gs.Controller"
+		],
+		"uses": [
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick"
+		]
+	},
+	"gs.Con.Keyboard": {
+		"deps": [
+			"gs.Controller"
+		],
+		"uses": [
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick"
+		]
+	},
+	"gs.Game.ControllerConfig": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope",
+			"gs.Con.Keyboard",
+			"gs.Con.Gamepad"
+		]
+	},
+	"gs.Game.Embed": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope",
+			"Promise"
+		]
+	},
+	"gs.Game.Remote": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope"
+		]
+	},
+	"gs.Game.SystemSettings": {
+		"deps": [
+			"gs.Game"
+		],
+		"uses": [
+			"rescope",
+			"gs.Game.ControllerConfig"
+		]
+	},
+	"gs.MemCon": {
+		"deps": [
+			"gs.MemoryCard"
+		],
+		"uses": [
+			"ObjectConnector",
+			"gs.GameSave"
+		]
+	},
+	"gs.MemCon.Object": {
+		"deps": [
+			"gs.MemCon"
+		],
+		"uses": [
+			"ObjectConnector"
 		]
 	}
 }

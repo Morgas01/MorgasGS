@@ -11,12 +11,14 @@
 
 	let EmbeddedGame=null;
 
+	/**
+	 * embeds a Game on the whole page to be used from a Game.Remote parent window
+	 */
 	Game.Embed=function(gameClass,options={})
 	{
-		let namePrefix, args;
-		({
-			namePrefix:namePrefix="embedded_",
-			args:args=[]
+		let ({
+			namePrefix="embedded_",
+			args=[]
 		}=options);
 
 		if(EmbeddedGame) return EmbeddedGame;

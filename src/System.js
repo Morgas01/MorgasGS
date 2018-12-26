@@ -6,6 +6,13 @@
 		rs:"rescope"
 	});
 
+	/**
+	 *
+	 *
+	 *
+	 *
+	 *
+	 */
 	gs.System=µ.Class({
 		constructor:function()
 		{

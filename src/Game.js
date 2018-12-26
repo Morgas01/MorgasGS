@@ -18,7 +18,7 @@
 		constructor:function({elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
 		{
 			this.state=null;
-			this.system=null; // set from System.setProgramm()
+			this.system=null; // set from System.setGame()
 			this.domElement=domElement;
 			this.domElement.classList.add("Game");
 			this.domElement.classList.add(this.name);

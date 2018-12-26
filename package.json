@@ -1,6 +1,6 @@
 {
 	"name": "morgas.gs",
-	"version": "0.8.7",
+	"version": "0.8.8",
 	"description": "Morgas Game System",
 	"homepage": "https://github.com/Morgas01/MorgasGS",
 	"bugs": {
@@ -19,6 +19,6 @@
 		"concat-with-sourcemaps": "^1.0.5",
 		"less": "^2.7.3",
 		"magic-string": "^0.22.4",
-		"morgas": "^0.8.2"
+		"morgas": "^0.8.8"
 	}
 }

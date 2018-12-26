@@ -6,6 +6,13 @@
 		rs:"rescope"
 	});
 
+	/**
+	 *
+	 *
+	 *
+	 *
+	 *
+	 */
 	gs.System=µ.Class({
 		constructor:function()
 		{
@@ -320,7 +327,7 @@
 		constructor:function({elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
 		{
 			this.state=null;
-			this.system=null; // set from System.setProgramm()
+			this.system=null; // set from System.setGame()
 			this.domElement=domElement;
 			this.domElement.classList.add("Game");
 			this.domElement.classList.add(this.name);
@@ -586,12 +593,14 @@
 
 	let EmbeddedGame=null;
 
+	/**
+	 * embeds a Game on the whole page to be used from a Game.Remote parent window
+	 */
 	Game.Embed=function(gameClass,options={})
 	{
-		let namePrefix, args;
-		({
-			namePrefix:namePrefix="embedded_",
-			args:args=[]
+		let ({
+			namePrefix="embedded_",
+			args=[]
 		}=options);
 
 		if(EmbeddedGame) return EmbeddedGame;
