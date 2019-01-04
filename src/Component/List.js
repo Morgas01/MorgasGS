@@ -11,7 +11,7 @@
 	let List=Component.List=µ.Class(Component,{
 		constructor:function(data=[],mapper=List.STD_MAPPER,{columns=1,active=0,controllerMappings=List.STD_CONTROLLER_MAPPINGS,threshold}={})
 		{
-			SC.rs.all(this,["_step"]);
+			SC.rs.all(this,["_step","onClick"]);
 
 			this.mega(controllerMappings,{stickThreshold:threshold});
 			let reporter=new SC.Reporter(this,[List.SelectEvent]);
@@ -34,6 +34,7 @@
 			};
 
 			this.update();
+			this.domElement.addEventListener("click",this.onClick);
 		},
 		/** updates the items from data */
 		update()
@@ -45,7 +46,8 @@
 			for(let index=0;index<this.data.length;index++)
 			{
 				let element=document.createElement("DIV");
-				this.mapper(element,this.data[index]);
+				this.mapper(element,this.data[index],index,this.data);
+				element.dataset.index=index;
 				element.dataset.index=index;
 				if(this.active===index) element.classList.add("active");
 				this.domElement.appendChild(element);
@@ -93,7 +95,7 @@
 				{
 					let index=this.active;
 					let dom=this.domElement.children[index];
-					let data=this.data[index];
+					let data=this.getActiveData();
 					return this.reportEvent(new List.SelectEvent(index,dom,data));
 				}
 			}
@@ -156,6 +158,20 @@
 			this._stopMovement();
 			this.domElement.remove();
 			this.mega();
+		},
+		onClick(event)
+		{
+			let dom=event.target;
+			while(dom&&dom.parentNode!=this.domElement) dom=dom.parentNode;
+			if(!dom) return;
+
+			let index=dom.dataset.index;
+			let data=this.data[index];
+			this.reportEvent(new List.SelectEvent(index,dom,data));
+		},
+		getActiveData()
+		{
+			return this.data[this.active];
 		}
 	});
 

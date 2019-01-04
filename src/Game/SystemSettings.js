@@ -3,40 +3,58 @@
 	let Game=GMOD("gs.Game");
 
 	SC=SC({
-		rescope:"rescope",
-		ControllerConfig:"gs.Game.ControllerConfig"
+		ControllerConfig:"gs.Comp.ControllerConfig",
+		List:"gs.Comp.List",
+		proxy:"proxy"
 	});
 
+	/** this "Game" shows and configures all settigs of the System it is loaded into */
 	Game.SystemSettings=µ.Class(Game,{
 		name:"SystemSettings",
-		constructor:function(onExit)
+		constructor:function(onExit,controllerConfigParam={})
 		{
-			SC.rescope.all(this,["onAction"]);
 			this.mega();
+
 			this.onExit=onExit;
-			this.actionsContainer=document.createElement("DIV");
-			this.actionsContainer.classList.add("actions");
-			this.actionsContainer.innerHTML=`
-				<button data-action="controllerConfig">Controller Config</button>
-				<button data-action="exit">Exit</button>
-			`;
-			this.actionsContainer.addEventListener("click",this.onAction);
-			this.domElement.appendChild(this.actionsContainer);
+			this.controllerConfigParam=controllerConfigParam;
+			this.content=this.list=new SC.List(["Controller Config","Exit"]);
+			this.list.addEventListener("gs.Select",this,this.onSelect);
+
+			SC.proxy("content",["onControllerChange"],this)
+
+			this.domElement.appendChild(this.content.domElement);
 		},
-		onAction(event)
+		onSelect(event)
 		{
-			let system=this.system;
-			switch(event.target.dataset.action)
+			switch(event.data)
 			{
-				case "controllerConfig":
-					system.setGame(new SC.ControllerConfig({
-						onExit:()=>system.setGame(this)
-					}));
+				case "Controller Config":
+					this.switchContent(event.data);
 					break;
-				case "exit":
+				case "Exit":
 					if(this.onExit) this.onExit();
 					return;
 			}
+		},
+		switchContent(name)
+		{
+			if(this.content!=this.list) this.content.destroy();
+			else this.content.domElement.remove();
+
+			switch(name)
+			{
+				default:
+				case "list":
+					this.content=this.list;
+					break;
+				case "Controller Config":
+					this.content=new SC.ControllerConfig(this.system,{
+						...this.controllerConfigParam,
+						onExit:()=>this.switchContent("list")
+					});
+					break;
+			}
+			this.domElement.appendChild(this.content.domElement);
 		}
 	});
 

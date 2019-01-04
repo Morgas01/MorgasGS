@@ -22,7 +22,8 @@
 	width:1.1em;
 	height: 1.1em;
 }
-.TickTackToe:not(.congratulation) .List > .active::after {
+.TickTackToe:not(.congratulation) .List:not(:hover) > .active::after,
+.TickTackToe:not(.congratulation) .List > div:hover::after {
 	content:"";
 	border:.1ex solid white;
 	position:absolute;

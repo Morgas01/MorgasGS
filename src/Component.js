@@ -16,7 +16,7 @@
 	 * @property {Object.<Number,controllerMapping_task>} (axis)
 	 * @property {Object.<Number,controllerMapping_task>} (stick)
 	 */
-
+	/** Base class of all controllable things ( direct use of controller input )*/
 	gs.Component=µ.Class({
 		[µ.Class.symbols.abstract]:true,
 		constructor:function(mapping=null,analyzerOptions)
@@ -26,6 +26,7 @@
 		},
 		/** @type {Object.<String,Function>} */
 		actions:{},
+		//consumeControllerChange(event){} from gs.Con.Consumer
 	});
 
 	SMOD("gs.Component",gs.Component);

@@ -16,10 +16,10 @@
 	 */
 	Game.Embed=function(gameClass,options={})
 	{
-		let ({
+		let {
 			namePrefix="embedded_",
 			args=[]
-		}=options);
+		}=options;
 
 		if(EmbeddedGame) return EmbeddedGame;
 		let newProto=Object.assign({},Game.Embed.proto);

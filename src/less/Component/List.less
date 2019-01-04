@@ -1,4 +1,11 @@
 .Component.List {
 	display:grid;
 	grid-template-columns: repeat( var(--list-columns,1), 1fr);
+
+	.active(@css:{})
+	{
+		&:not(:hover) .active,& > div:hover {
+			@css();
+		}
+	}
 }

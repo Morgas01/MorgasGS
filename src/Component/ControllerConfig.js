@@ -1,64 +1,85 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-	let Game=GMOD("gs.Game");
+	let Panel=GMOD("gs.Panel");
 
 	SC=SC({
-		rescope:"rescope",
+		List:"gs.Comp.List",
+		repeat:"array.repeat",
+
 		Keyboard:"gs.Con.Keyboard",
 		Gamepad:"gs.Con.Gamepad",
+
+		Button:"gs.Button",
+		Axis:"gs.Axis",
+		Stick:"gs.Stick",
+
+		ControllerStatus:"gs.Comp.ControllerStatus"
 	});
 
-	Game.ControllerConfig=µ.Class(Game,{
-		name:"ControllerConfig",
-		constructor:function({
+	/** this Component lists and configures all Controller on the System */
+	Component.ControllerConfig=µ.Class(Panel,{
+		constructor:function(system,{
 			onExit=null,
 			buttons=6,
-			sticks=1,
-			axes=0
+			axes=0,
+			sticks=1
 		}={})
     	{
-			SC.rescope.all(this,["onAction"]);
+    		if(!system) throw new TypeError("#ControllerConfig:001 no system provided");
+
     		this.mega();
 
     		this.onExit=onExit;
+    		this.system=system;
 
-    		this.templateCounts={
-				buttons:buttons,
-				sticks:sticks,
-				axes:axes
-			};
+			this.buttonCount=buttons;
+			this.stickCount=sticks;
+			this.axisCount=axes;
+
+			this.domElement=document.createElement("DIV");
+			this.domElement.classList.add("Component","ControllerConfig");
 
 			this.main=document.createElement("DIV");
 			this.main.classList.add("main");
 			this.domElement.appendChild(this.main);
 
-    		this.menu=document.createElement("DIV");
-    		this.menu.classList.add("menu");
-    		this.menu.innerHTML=`
-    			<div class="addController" tabindex="-1">
-    				<span title="add">➕</span>
-    				<div>
-    					<div data-action="addGamepad" title="Gamepad">🎮</div>
-    					<div data-action="addKeyboard" title="Keyboard">⌨</div>
-    				</div>
-    			</div>
-    			<div data-action="mapping" title="Mapping">⚙</div>
-    			<div data-action="setting" title="Setting">🔧</div>
-    			<div data-action="remove" title="Remove">➖</div>
-    			<div data-action="exit" title="Exit">🚪</div>
-    		`;
-    		this.menu.addEventListener("click",this.onAction);
-    		this.main.appendChild(this.menu);
+    		this.actionMenu=new SC.List([
+    			{
+    				symbol:"➕",
+    				action:"add"
+    			},
+    			{
+    				symbol:"🔧",
+    				action:"edit"
+    			},
+    			{
+    				symbol:"⚙",
+    				action:"precision"
+    			},
+    			{
+    				symbol:"➖",
+    				action:"remove"
+    			},
+    			{
+    				symbol:"🚪",
+    				action:"exit"
+    			}
+    		],
+    		actionMenuMapper,
+    		{
+    			columns:5
+    		});
+    		this.actionMenu.addEventListener("gs.Select",this,this.onAction);
 
-    		this.controllerIcons=new Map([
-				[SC.Keyboard.prototype.constructor,"⌨"],
-				[SC.Gamepad.prototype.constructor,"🎮"],
-			]);
+    		this.actionMenu.domElement.classList.add("actionMenu");
+    		this.main.appendChild(this.actionMenu.domElement);
 
-    		this.list=document.createElement("DIV");
-    		this.list.classList.add("list");
-    		this.main.appendChild(this.list);
-    		this.controllerMap=new Map();
+    		this.controllers=[];
+			this.controllerList=new SC.List(this.controllers,controllerListMapper);
+    		this.controllerList.domElement.classList.add("controllerList");
+    		this.main.appendChild(this.controllerList.domElement);
+
+    		this.updateSystem();
     	},
     	setPause(value)
     	{
@@ -67,42 +88,25 @@
     	},
     	updateSystem()
     	{
-    		this.controllerMap.clear();
-    		while(this.list.lastChild) this.list.lastChild.remove();
-
-    		let counter=0;
-    		for(let controller of this.system.controllers)
-    		{
-    			let element=document.createElement("LABEL");
-    			element.innerHTML=`
-    				<input type="radio" name="ControllerConfig-list">
-    				<div>${this.controllerIcons.get(controller.constructor)||"⁈"}</div>
-    				<div>test ${++counter}
-    			`;
-    			this.controllerMap.set(element,controller);
-    			this.controllerMap.set(controller,element);
-    			this.list.appendChild(element);
-    		}
+			this.controllers.length=0;
+			this.controllers.push(...this.system.controllers);
+			this.controllerList.update();
     	},
     	onAction(event)
 		{
 			let selected;
 			let controller;
-			switch(event.target.dataset.action)
+			switch(event.data.action)
 			{
-				case "addGamepad":
+				case "add":
 					this.selectGamepad()
 					.then(newGameCon=>{
 						this.system.addController(newGameCon);
-						this.mapGamepad(newGameCon);
+						this.updateSystem;
 					});
 					break;
-				case "addKeyboard":
-					let newKeyCon=new SC.Keyboard();
-					this.system.addController(newKeyCon);
-					controllerConfig.mapKeyboard(newKeyCon);
-					break;
-				case "mapping":
+				case "edit":
+				/*
 					selected=this.list.querySelector(":checked").parentNode;
 					controller=this.controllerMap.get(selected);
 					if(!controller) return ;
@@ -119,15 +123,17 @@
 							µ.logger.error("#ControllerConfig:001 unknown controller class")
 							//TODO
 					}
-
+				*/
 					break;
-				case "setting":
-					selected=this.list.querySelector(":checked");
-					if(!selected) return ;
-					controller=this.controllerMap.get(selected.parentNode);
-					if(!controller) return ;
-
-					this.setting(controller);
+				case "precision":
+					let controllerStatus=new SC.ControllerStatus({
+						[this.controllerList.getActiveData().ID]:{
+							action:"show"
+						}
+					});
+					this.domElement.appendChild(controllerStatus.domElement);
+					this.domElement.classList.add("subScreen");
+					this.addComponent(controllerStatus);
 
 					break;
 				case "remove":
@@ -148,11 +154,21 @@
 			{
 				let chooseContainer=document.createElement("DIV");
 				chooseContainer.classList.add("selectGamepad");
+				chooseContainer.innerHTML=`<div class="gamepad-hint">press any button to activate gamepad</div>`;
 
-				let gamepads;
+				let choices=["cancel","keyboard"];
+				let chooseList=new SC.List(choices,function(e,gamepad,index)
+				{
+					if(index<=1) e.textContent=gamepad;
+					else e.textContent=gamepad.id;
+				});
+				this.addComponent(chooseList);
+				chooseContainer.appendChild(chooseList.domElement);
 				let updateChoice=()=>
 				{
-					gamepads=navigator.getGamepads();
+					choices.length=2;
+
+					let gamepads=navigator.getGamepads();
 					for(let controller of this.system.controllers)
 					{
 						if(controller instanceof SC.Gamepad)
@@ -160,49 +176,38 @@
 							gamepads[controller.gamepad.index]=null;
 						}
 					}
-					gamepads=gamepads.filter(µ.constantFunctions.pass);
-					chooseContainer.innerHTML=`
-						<select>
-							<option value=""/>
-							${gamepads.map(g=>
-							`<option value="${g.index}">${g.id}</option>`)
-							.join("\n")}
-						</select>
-						<div class="gamepad-hint">press any button to activate gamepad</div>
-						<div>
-							<button data-action="ok">OK</button>
-							<button data-action="cancel">Cancel</button>
-						</div>
-					`;
-					chooseContainer.children[0].focus();
+					choices.push(...gamepads.filter(µ.constantFunctions.pass));
+					chooseList.update();
 				};
 				window.addEventListener("gamepadconnected",updateChoice);
-				this.domElement.appendChild(chooseContainer);
-				this.domElement.classList.add("block");
 				updateChoice();
+				this.domElement.appendChild(chooseContainer);
+				this.domElement.classList.add("subScreen");
 
-				chooseContainer.addEventListener("click",(event)=>
+				chooseList.addEventListener("gs.Select",this,function(event)
 				{
-					switch(event.target.dataset.action)
+					chooseContainer.remove();
+					chooseList.destroy();
+					this.removeComponent(chooseList);
+					window.removeEventListener("gamepadconnected",updateChoice);
+
+					switch(event.data)
 					{
 						case "cancel":
-							window.removeEventListener("gamepadconnected",updateChoice);
-							this.domElement.classList.remove("block");
-							chooseContainer.remove();
 							reject();
 							break;
-						case "ok":
-							let select=chooseContainer.children[0];
-							let gamepad=gamepads[select.value]
-							if(gamepad)
-							{
-								window.removeEventListener("gamepadconnected",updateChoice);
-								this.domElement.classList.remove("block");
-								chooseContainer.remove();
-								resolve(new SC.Gamepad(gamepad));
-							}
+						case "keyboard":
+							resolve(new SC.Keyboard({
+								buttons:SC.repeat(this.buttonCount,()=>new SC.Button()),
+								axes:SC.repeat(this.axisCount,()=>new SC.Axis()),
+								sticks:SC.repeat(this.stickCount,()=>new SC.Stick()),
+							}));
+							break;
+						default:
+							resolve(new SC.Gamepad(event.data));
 							break;
 					}
+					this.domElement.classList.remove("subScreen");
 				});
 			});
 		},
@@ -427,22 +432,34 @@
 				this.domElement.appendChild(this.main);
 			});
 		},
-		getItem(item)
+		destroy()
 		{
-			while(item&&!item.dataset.type) item=item.parentNode;
-			if(!item)
-			{
-				µ.logger.error("#ControllerConfig:002 item not found");
-				return null;
-			}
-			return item;
-		},
-		setting(controller)
-		{
-			//TODO
+			this.domElement.remove();
+			this.mega();
 		}
 	});
 
-	SMOD("gs.Game.ControllerConfig",Game.ControllerConfig);
+	let controllerListMapper=function(element,controller)
+	{
+		switch(controller.constructor)
+		{
+			case SC.Keyboard.prototype.constructor:
+				element.textContent="⌨\tKeyboard";
+				break;
+			case SC.Gamepad.prototype.constructor:
+				element.textContent="🎮\t"+controller.gamepad.id;
+				break;
+			default:
+				element.textContent="?\tUnknown";
+				µ.logger.error("#ControllerConfig:001 unknown controller class");
+		}
+	};
+	let actionMenuMapper=function(element,data)
+	{
+		element.textContent=data.symbol;
+		element.title=data.action
+	};
+
+	SMOD("gs.Comp.ControllerConfig",Component.ControllerConfig);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

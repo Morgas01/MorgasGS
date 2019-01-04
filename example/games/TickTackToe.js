@@ -39,9 +39,7 @@ let TickTackToe=µ.Class(µ.gs.Game,{
 	},
 	onControllerChange(event)
 	{
-		if(!this.list.consumeControllerChange(event)&&event.type==="button")
-		{
-		}
+		this.list.consumeControllerChange(event);
 	},
 	onSelect(selectEvent)
 	{

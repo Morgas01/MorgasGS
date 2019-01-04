@@ -43,6 +43,12 @@
 		"deps": [],
 		"uses": []
 	},
+	"gs.Panel": {
+		"deps": [],
+		"uses": [
+			"array.remove"
+		]
+	},
 	"gs.Stick": {
 		"deps": [],
 		"uses": [
@@ -53,6 +59,30 @@
 		"deps": [],
 		"uses": [
 			"rescope"
+		]
+	},
+	"gs.Comp.ControllerConfig": {
+		"deps": [
+			"gs.Panel"
+		],
+		"uses": [
+			"gs.Comp.List",
+			"array.repeat",
+			"gs.Con.Keyboard",
+			"gs.Con.Gamepad",
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick",
+			"gs.Comp.ControllerStatus"
+		]
+	},
+	"gs.Comp.ControllerStatus": {
+		"deps": [
+			"gs.Component"
+		],
+		"uses": [
+			"array.repeat",
+			"register"
 		]
 	},
 	"gs.Comp.Course": {
@@ -113,16 +143,6 @@
 			"gs.Stick"
 		]
 	},
-	"gs.Game.ControllerConfig": {
-		"deps": [
-			"gs.Game"
-		],
-		"uses": [
-			"rescope",
-			"gs.Con.Keyboard",
-			"gs.Con.Gamepad"
-		]
-	},
 	"gs.Game.Embed": {
 		"deps": [
 			"gs.Game"
@@ -145,8 +165,9 @@
 			"gs.Game"
 		],
 		"uses": [
-			"rescope",
-			"gs.Game.ControllerConfig"
+			"gs.Comp.ControllerConfig",
+			"gs.Comp.List",
+			"proxy"
 		]
 	},
 	"gs.MemCon": {

@@ -7,11 +7,8 @@
 	});
 
 	/**
-	 *
-	 *
-	 *
-	 *
-	 *
+	 * this class marks the point of all input and game unspecific configuration.
+	 * it holds all Controllers, the memoryCard
 	 */
 	gs.System=µ.Class({
 		constructor:function()
@@ -183,6 +180,17 @@
 				param.oldSaves=[oldSave,...(oldSave.oldSaves.slice(0,this.OLD_SAVE_COUNT-1))];
 			}
 			return this.memoryCard.save(this.program.name,new SC.GameSave(param));
+		},
+		async toggleFullscreen(force)
+		{
+			if (force==null?force:!document.fullscreenElement)
+			{
+				return this.domElement.requestFullscreen();
+			}
+			else
+			{
+				return document.exitFullscreen();
+			}
 		}
 	});
 

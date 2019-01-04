@@ -1,0 +1,26 @@
+.ControllerConfig {
+
+	&, .main {
+		background-color:white;
+		height:100%;
+	}
+
+	&.subScreen {
+		 .main {
+			pointer-events:none;
+			background-color:rgba(0,0,0,.6);
+			+ * {
+				background-color:white;
+				z-index:1;
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%,-50%);
+				padding: 1em;
+				border: 1px solid;
+				border-radius: 1em;
+				box-shadow: .5ex .5ex 1ex black;
+			}
+		}
+	}
+}
