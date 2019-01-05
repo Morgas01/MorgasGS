@@ -1,5 +1,283 @@
 (function(µ,SMOD,GMOD,HMOD,SC){
 
+    let gs=µ.gs=µ.gs||{};
+
+	//SC=SC({});
+
+	gs.Axis=µ.Class({
+		constructor:function({value=0,correction=0,scale=1,min=-100,max=100}={})
+		{
+			this.value=0;
+			this.oldValue=0;
+			this.correction=0;
+			this.scale=1;
+			this.min=min;
+			this.max=max;
+
+			this.setValue(value);
+			this.setCorrection(correction);
+			this.setScale(scale);
+		},
+		setCorrection(correction=0)
+		{
+			this.correction=Math.min(Math.max(correction,-100),100);
+		},
+		setScale(scale=1)
+		{
+			this.scale=Math.max(scale,Number.EPSILON);
+		},
+        setValue(value)
+        {
+        	this.oldValue=this.value;
+        	if(value==null) return false;
+        	value=Math.min(Math.max(value*this.scale+this.correction,this.min),this.max);
+        	if(this.value==value) return false;
+			this.value=value;
+			return true;
+        },
+		getState()
+		{
+			return {
+				value:this.value,
+				old:this.oldValue
+			};
+		},
+		toJSON()
+		{
+			return {
+				correction:this.correction,
+				scale:this.scale
+			};
+		}
+	});
+
+	gs.Axis.fromJSON=function(json)
+	{
+		return new gs.Axis(json);
+	};
+
+	SMOD("gs.Axis",gs.Axis);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+    let gs=µ.gs=µ.gs||{};
+
+    let Axis=GMOD("gs.Axis");
+
+	//SC=SC({});
+
+	gs.Button=µ.Class(Axis,{
+		constructor:function(param={})
+		{
+			param.min=0;
+			param.max=100;
+			this.mega(param);
+		}
+	});
+
+	gs.Button.fromJSON=function(json)
+	{
+		return new gs.Button(json);
+	};
+
+	SMOD("gs.Button",gs.Button);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let gs=µ.gs=µ.gs||{};
+
+	//SC=SC({});
+
+	let gameNames=new Map();
+
+	gs.Game=µ.Class({
+		[µ.Class.symbols.abstract]:true,
+		[µ.Class.symbols.onExtend]:function(sub)
+		{
+			let sProt=sub.prototype;
+			if(!sProt.hasOwnProperty("name")||!sProt.name) throw new SyntaxError("#Game:001 Game has no name");
+			if(gameNames.has(sProt.name)) throw new RangeError("#Game:002 Game name must be unique");
+			gameNames.set(sProt.name,sub);
+		},
+		constructor:function({elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
+		{
+			this.state=null;
+			this.system=null; // set from System.setGame()
+			this.domElement=domElement;
+			this.domElement.classList.add("Game");
+			this.domElement.classList.add(this.name);
+
+			this.pause=true;
+		},
+		setPause(value)
+		{
+			this.pause=!!value;
+		},
+		onControllerChange(event){},
+		async save(oldSave=null)
+		{
+			if(this.system!=null)
+			{
+				return this.system.save(oldSave);
+			}
+			throw new ReferenceError("#Game:003 System is null");
+		},
+		async getSaves()
+		{
+			if(this.system!=null)
+			{
+				return this.system.getSaves(this.name);
+			}
+			return [];
+		},
+		destroy()
+		{
+			this.domElement.remove();
+			this.mega();
+		}
+	});
+
+	gs.Game.getGameByName=function(name)
+	{
+		return gameNames.get(name);
+	};
+
+	SMOD("gs.Game",gs.Game);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let gs=µ.gs=µ.gs||{};
+
+	//SC=SC({});
+
+	gs.MemoryCard=µ.Class({
+		[µ.Class.symbols.abstract]:true,
+		[µ.Class.symbols.onExtend]:function(sub)
+		{
+			if(typeof sub.prototype.save!="function") throw new SyntaxError("#MemoryCard:001 no save function defined");
+			if(typeof sub.prototype.getAll!="function") throw new SyntaxError("#MemoryCard:001 no getAll function defined");
+		},
+		//async save(gameName,gameSave){},
+		//async getAll(gameName){}
+	});
+
+	SMOD("gs.MemoryCard",gs.MemoryCard);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+    let gs=µ.gs=µ.gs||{};
+
+	SC=SC({
+		Axis:"gs.Axis"
+	});
+
+	gs.Stick=µ.Class({
+		constructor:function(xAxis=new SC.Axis(),yAxis=new SC.Axis())
+		{
+			this.xAxis=xAxis;
+			this.yAxis=yAxis;
+		},
+		setXAxis(axis)
+		{
+			this.xAxis=axis;
+		},
+		setYAxis(axis)
+		{
+			this.yAxis=axis;
+		},
+		setValue(valueX,valueY)
+		{
+			let rtn=this.xAxis.setValue(valueX);
+			rtn|=this.yAxis.setValue(valueY);
+			return rtn;
+		},
+		getState()
+		{
+			return {
+				x:this.xAxis.getState(),
+				y:this.yAxis.getState()
+			};
+		},
+		toJSON()
+		{
+			return {
+				xAxis:this.xAxis,
+				yAxis:this.yAxis
+			};
+		}
+	});
+
+	gs.Stick.fromJSON=function(json)
+	{
+		return new gs.Stick({
+			xAxis:new SC.Axis(json.xAxis),
+			yAxis:new SC.Axis(json.yAxis)
+		});
+	};
+
+	SMOD("gs.Stick",gs.Stick);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let gs=µ.gs=µ.gs||{};
+
+	SC=SC({
+		remove:"array.remove"
+	});
+
+	/** Base class for stack/list of Components */
+	gs.Panel=µ.Class({
+		constructor:function()
+		{
+			this.stack=[];
+		},
+		setStack(...components)
+		{
+			this.stack=components;
+		},
+		addComponent(...components)
+		{
+			this.removeComponent(...components);
+			this.stack.push(...components);
+		},
+		unshiftComponent(...components)
+		{
+			this.removeComponent(...components);
+			this.stack.unshift(...components);
+		},
+		removeComponent(...components)
+		{
+			for(let component of components)
+			{
+				while(SC.remove(this.stack,component)!=-1);
+			}
+		},
+		consumeControllerChange(event)
+		{
+			for(let i=this.stack.length-1;i>=0;i--)
+			{
+				let component=this.stack[i];
+				if(component.consumeControllerChange(event)) return;
+			}
+		}
+	});
+
+	SMOD("gs.Panel",gs.Panel);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
 	let gs=µ.gs=µ.gs||{};
 
 	SC=SC({
@@ -200,50 +478,268 @@
 /********************/
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-	let gs=µ.gs=µ.gs||{};
+	let Game=GMOD("gs.Game");
 
 	SC=SC({
-		remove:"array.remove"
+		rs:"rescope"
 	});
 
-	/** Base class for stack/list of Components */
-	gs.Panel=µ.Class({
+	/**
+	 * Game Class to execute an gs.Game.Embedded using an iframe
+	 */
+	Game.Remote=µ.Class(Game,{
+		[µ.Class.symbols.abstract]:function(name,url)
+		{
+			return {name:name,url:new URL(url,location.href)};
+		},
+		[µ.Class.symbols.onExtend]:function(sub)
+		{
+			Game.prototype[µ.Class.symbols.onExtend](sub);
+			let sProt=sub.prototype;
+			if(!sProt.url) throw new SyntaxError("#Game.Remote:001 Game has no url");
+			if(!(sProt.url instanceof URL)) throw new SyntaxError("#Game.Remote:002 Game url is not an instance of URL");
+		},
 		constructor:function()
 		{
-			this.stack=[];
+			SC.rs.all(this,["_onLoad","_onMessage","_sendPause"]);
+			this.mega({elementTag:"IFRAME"});
+			this.domElement.classList.add("Remote")
+			this.domElement.sandbox="allow-orientation-lock allow-pointer-lock allow-scripts allow-same-origin";
+			this.domElement.src=this.url;
+			this.domElement.addEventListener("load",this._onLoad,false);
+			window.addEventListener("message",this._onMessage,false);
 		},
-		setStack(...components)
+		_onLoad()
 		{
-			this.stack=components;
+			this.setPause(this.pause);
 		},
-		addComponent(...components)
+		_onMessage(event)
 		{
-			this.removeComponent(...components);
-			this.stack.push(...components);
-		},
-		unshiftComponent(...components)
-		{
-			this.removeComponent(...components);
-			this.stack.unshift(...components);
-		},
-		removeComponent(...components)
-		{
-			for(let component of components)
+			if(event.origin===this.url.origin)
 			{
-				while(SC.remove(this.stack,component)!=-1);
+				let message=event.data;
+				let promise=null;
+				switch(message.type)
+				{
+					case "save":
+						this.state=message.state;
+						promise=this.save(message.oldSave)
+						break;
+					case "getSaves":
+						promise=this.getSaves(message.oldSave);
+						break;
+					case "reclaimFocus":
+						this.reclaimFocus();
+						break;
+				}
+				if(promise)
+				{
+					promise.then(data=>({data:data}),error=>({error:error}))
+					.then(answer=>
+					{
+						answer.request=message.request;
+						this._send(answer);
+					});
+				}
 			}
 		},
-		consumeControllerChange(event)
+		_send(message)
 		{
-			for(let i=this.stack.length-1;i>=0;i--)
+			if(this.domElement.contentWindow)
 			{
-				let component=this.stack[i];
-				if(component.consumeControllerChange(event)) return;
+				this.domElement.contentWindow.postMessage(message,this.url.origin);
 			}
+		},
+		setPause(value)
+		{
+			this.mega(value);
+			this._send({
+				type:"pause",
+				value:this.pause
+			});
+		},
+		onControllerChange(event)
+		{
+			this._send({
+				type:"controllerEvent",
+				event:event
+			});
+		},
+		reclaimFocus()
+		{
+			if(this.system!=null)
+			{
+				this.system.domElement.focus();
+			}
+		},
+		destroy()
+		{
+			window.removeEventListener("message",this._onMessage,false);
+			this.mega();
 		}
 	});
 
-	SMOD("gs.Panel",gs.Panel);
+	SMOD("gs.Game.Remote",Game.Remote);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let gs=µ.gs=µ.gs||{};
+
+	let Event=GMOD("Event");
+
+	SC=SC({
+		remove:"array.remove",
+		removeIf:"array.removeIf",
+		Reporter:"EventReporterPatch",
+
+		Button:"gs.Button",
+		Axis:"gs.Axis",
+		Stick:"gs.Stick"
+	});
+
+	let NEXT_CONTROLLER_ID=0;
+
+	gs.Controller=µ.Class({
+		constructor:function({buttons=[],axes=[],sticks=[]}={})
+		{
+			this.ID=NEXT_CONTROLLER_ID++;
+
+			this.buttons=[];
+			this.axes=[];
+			this.sticks=[];
+
+			this.addButtons(buttons);
+			this.addAxes(axes);
+			this.addSticks(sticks);
+
+			new SC.Reporter(this)
+			.introduce(gs.Controller.ChangeEvent);
+
+		},
+		addButtons(buttons)
+		{
+			this.buttons.push(...buttons);
+		},
+		removeButtons(buttons)
+		{
+			SC.removeIf(this.buttons,buttons.includes,true,buttons)
+		},
+		removeButton(button)
+		{
+			SC.remove(this.buttons,button);
+		},
+		addAxes(axes)
+		{
+			this.axes.push(...axes);
+		},
+		removeAxes(axes)
+		{
+			SC.removeIf(this.axes,axes.includes,true,axes)
+		},
+		removeAxe(axe)
+		{
+			SC.remove(this.axes,axe);
+		},
+		addSticks(sticks)
+		{
+			this.sticks.push(...sticks);
+		},
+		removeSticks(sticks)
+		{
+			SC.removeIf(this.sticks,sticks.includes,true,sticks)
+		},
+		removeStick(stick)
+		{
+			SC.remove(this.sticks,stick);
+		},
+		getState()
+		{
+			return {
+				buttons:this.buttons.map(b=>b.getState()),
+				axes:this.axes.map(a=>a.getState()),
+				sticks:this.sticks.map(s=>s.getState()),
+			};
+		},
+		setButton:function(index,value)
+		{
+			if(index<0||index>=this.buttons.length)
+			{
+				µ.logger.error(`#gs.Controller:001 index out of bounds (Button ${index})`);
+				return;
+			}
+			let button=this.buttons[index];
+			if(button.setValue(value))
+			{
+				this.reportEvent(new gs.Controller.ChangeEvent(this,"button",index,button.getState()));
+				return true;
+			}
+		},
+		setAxis:function(index,value)
+		{
+			if(index<0||index>=this.axes.length)
+			{
+				µ.logger.error(`#gs.Controller:002 index out of bounds (Axis ${index})`);
+				return;
+			}
+			let axis=this.axes[index];
+			if(axis.setValue(value))
+			{
+				this.reportEvent(new gs.Controller.ChangeEvent(this,"axis",index,axis.getState()));
+				return true;
+			}
+		},
+		setStick:function(index,valueX,valueY)
+		{
+			if(index<0||index>=this.sticks.length)
+			{
+				µ.logger.error(`#gs.Controller:003 index out of bounds (stick ${index})`);
+				return;
+			}
+			let stick=this.sticks[index];
+			if(stick.setValue(valueX,valueY))
+			{
+				this.reportEvent(new gs.Controller.ChangeEvent(this,"stick",index,stick.getState()));
+				return true;
+			}
+		},
+		toJSON()
+		{
+			return {
+				buttons:this.buttons,
+				axes:this.axes,
+				sticks:this.sticks
+			};
+		}
+	});
+
+	gs.Controller.fromJSON=function(json)
+	{
+		if(json.buttons) json.buttons=buttons.map(SC.Button.fromJSON);
+		if(json.axes) json.axes=json.axes.map(SC.Axis.fromJSON);
+		if(json.sticks) json.sticks=json.sticks.map(SC.Sticks.fromJSON);
+
+		return new gs.Controller(buttons,axes,sticks);
+	};
+
+	SMOD("gs.Controller",gs.Controller);
+
+	gs.Controller.ChangeEvent=µ.Class(Event,
+	{
+		name:"controllerChange",
+		constructor:function(controller,type,index,value)
+		{
+			/** @type {gs.Controller} */
+			this.controllerID=controller.ID
+			/** @type {String} "button", "axis" or "stick" */
+			this.type=type;
+			/** @type {Number} */
+			this.index=index;
+			/** @type {gs.Button|gs.Axes|gs.Stick} */
+			this.value=value;
+		}
+	});
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -543,6 +1039,41 @@
 /********************/
 (function(µ,SMOD,GMOD,HMOD,SC){
 
+	let gs=µ.gs=µ.gs||{};
+
+	SC=SC({
+		Consumer:"gs.Con.Consumer",
+		Analyzer:"gs.Con.Analyzer"
+	});
+
+	/** @typedef {Object} controllerMapping_task
+	 * @property {String} action
+	 * @property {Any} (data)
+	 */
+	/** @typedef {Object} controllerMapping
+	 * @property {Object.<Number,controllerMapping_task>} (button)
+	 * @property {Object.<Number,controllerMapping_task>} (axis)
+	 * @property {Object.<Number,controllerMapping_task>} (stick)
+	 */
+	/** Base class of all controllable things ( direct use of controller input )*/
+	gs.Component=µ.Class({
+		[µ.Class.symbols.abstract]:true,
+		constructor:function(mapping=null,analyzerOptions)
+		{
+			new SC.Consumer(this,this.actions,mapping);
+			this.analyzer=new SC.Analyzer(analyzerOptions);
+		},
+		/** @type {Object.<String,Function>} */
+		actions:{},
+		//consumeControllerChange(event){} from gs.Con.Consumer
+	});
+
+	SMOD("gs.Component",gs.Component);
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
 	let Component=GMOD("gs.Component");
 
 	SC=SC({
@@ -640,6 +1171,191 @@
 	};
 
 	SMOD("gs.Comp.ControllerStatus",ControllerStatus)
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let Component=GMOD("gs.Component");
+
+	SC=SC({});
+
+	Component.Course=µ.Class(Component,{
+		[µ.Class.symbols.abstract]:true,
+		constructor:function({controllerMappings,items=[],elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
+		{
+			this.mega(controllerMappings);
+
+			this.domElement=domElement;
+			this.domElement.classList.add("Component","Course");
+
+			this.items=new Set();
+
+			this.addItems(items);
+		},
+		addItem(item)
+		{
+			this.items.add(item);
+		},
+		addItems(items)
+		{
+			if(!items) return;
+			for(let item of items) this.addItem(item);
+		},
+		removeItem(item)
+		{
+			this.items.delete(item);
+		},
+		removeItems(items)
+		{
+			if(!items) return;
+			for(let item of items) this.removeItem(item);
+		},
+		destroy()
+		{
+			for(let item of this.items) item.destroy();
+			this.domElement.remove();
+			this.mega();
+		}
+	});
+
+	/**
+	 * Basic 2D Item for Course
+	 */
+	Component.Course.Item=µ.Class({
+		constructor:function({element,x=0,y=0,name=""}={})
+		{
+			/** element that is actually visible (dom/svg/etc)*/
+			this.element=element;
+
+			if(element) Component.Course.Item._references.set(this.element,this);
+
+			this.x=x;
+			this.y=y;
+			this.name=name;
+		},
+		setPosition(x=this.x,y=this.y)
+		{
+			this.x=x;
+			this.y=y;
+		},
+		move(x=0,y=0)
+		{
+			this.setPosition(this.x+x,this.y+y);
+		}
+	});
+	/** keep back references from elements to instances */
+	Component.Course.Item._references=new WeakMap();
+
+	SMOD("gs.Comp.Course",Component.Course);
+
+
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let Course=GMOD("gs.Comp.Course");
+
+	SC=SC({
+		rs:"rescope",
+		proxy:"proxy"
+	});
+
+	Course.Svg=µ.Class(Course,{
+		constructor:function(param={})
+		{
+			if(!param.domElement) param.domElement=Course.Svg.createElement("svg");
+
+			this.mega(param);
+
+			this.defs=Course.Svg.createElement("defs");
+			this.domElement.appendChild(this.defs);
+
+			for(let attr of ["version","baseProfile","width","height","viewBox","preserveAspectRatio"])
+			{
+				Object.defineProperty(this,attr,{
+					configurable:true,
+					enumerable:true,
+					get:()=>this.domElement.getAttribute(attr),
+					set:value=>this.domElement.setAttribute(attr,value)
+				});
+			};
+
+			this.version=Course.Svg.VERSION;
+			this.baseProfile=Course.Svg.BASE_PROFILE;
+
+			({
+				width:this.width=null,
+				height:this.height=null,
+				preserveAspectRatio:this.preserveAspectRatio="none",
+
+				viewTop:param.viewTop=0,
+				viewLeft:param.viewLeft=0,
+				viewWidth:param.viewWidth=this.width==null?this.width:100,
+				viewHeight:param.viewHeight=this.height==null?this.height:100,
+				viewBox:this.viewBox=param.viewTop+" "+param.viewLeft+" "+param.viewWidth+" "+param.viewHeight
+			}=param);
+
+		},
+		addDef(element)
+		{
+			this.defs.appendChild(element);
+		},
+		addItem(item)
+		{
+			this.mega(item);
+			this.domElement.appendChild(item.element);
+		},
+		removeItem(item)
+		{
+			this.mega(item);
+			this.domElement.removeChild(item.element);
+		},
+	});
+	Course.Svg.VERSION=1.2;
+	Course.Svg.BASE_PROFILE="full";
+	Course.Svg.XMLNS="http://www.w3.org/2000/svg";
+	Course.Svg.createElement=function(tagName,attributes={})
+	{
+		let element=document.createElementNS(Course.Svg.XMLNS,tagName);
+
+		for(let [attr,value] of Object.entries(attributes))
+		{
+			element.setAttribute(attr,value);
+		}
+		return element;
+	};
+
+	Course.Svg.Item=µ.Class(Course.Item,{
+		constructor:function(param={})
+		{
+			if(!param.element) param.element=Course.Svg.createElement(param.tagName||"g",param.attributes)
+			this.mega(param);
+
+			this.autoUpdate=false;
+
+			this.setPosition();
+
+			this.autoUpdate=param.autoUpdate!==false;
+		},
+		setPosition(x,y)
+		{
+			this.mega(x,y);
+			if(this.autoUpdate) this.update();
+		},
+		update()
+		{
+			this.element.setAttribute("transform",`translate(${this.x} ${this.y})`);
+		},
+		destroy()
+		{
+			this.element.remove();
+			this.mega();
+		}
+	});
+
+	SMOD("gs.Comp.Course.Svg",Course.Svg);
+
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -1676,187 +2392,6 @@
 /********************/
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-	let gs=µ.gs=µ.gs||{};
-
-	//SC=SC({});
-
-	gs.MemoryCard=µ.Class({
-		[µ.Class.symbols.abstract]:true,
-		[µ.Class.symbols.onExtend]:function(sub)
-		{
-			if(typeof sub.prototype.save!="function") throw new SyntaxError("#MemoryCard:001 no save function defined");
-			if(typeof sub.prototype.getAll!="function") throw new SyntaxError("#MemoryCard:001 no getAll function defined");
-		},
-		//async save(gameName,gameSave){},
-		//async getAll(gameName){}
-	});
-
-	SMOD("gs.MemoryCard",gs.MemoryCard);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let MemoryCard=GMOD("gs.MemoryCard");
-
-	SC=SC({
-		ObjectConnector:"ObjectConnector",
-		GameSave:"gs.GameSave"
-	});
-
-	MemoryCard.Connector=µ.Class(MemoryCard,{
-		[µ.Class.symbols.abstract]:true,
-		[µ.Class.symbols.onExtend]:function(sub)
-		{
-			if(typeof sub.prototype.getConnector!="function") throw new SyntaxError("#MemoryCard.Connector:001 no getConnector function defined");
-		},
-		//getConnector(name){},
-		save(gameName,gameSave)
-		{
-			let connector=this.getConnector(gameName);
-			return connector.save(gameSave);
-		},
-		getAll(gameName)
-		{
-			let connector=this.getConnector(gameName);
-			return connector.load(SC.GameSave);
-		}
-	});
-
-	SMOD("gs.MemCon",MemoryCard.Connector);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let MemCon=GMOD("gs.MemCon");
-
-	SC=SC({
-		ObjectConnector:"ObjectConnector"
-	});
-
-	MemCon.Object=µ.Class(MemCon,{
-		constructor:function(global=false)
-		{
-			this.connectors=new Map();
-			this.global=global;
-		},
-		getConnector(name)
-		{
-			if(!this.connectors.has(name))
-			{
-				this.connectors.set(name,new SC.ObjectConnector(this.global));
-			}
-			return this.connectors.get(name);
-		}
-	});
-
-	SMOD("gs.MemCon.Object",MemCon.Object);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let gs=µ.gs=µ.gs||{};
-
-	let DBObj=GMOD("DBObj");
-
-	//SC=SC({});
-
-	gs.GameSave=µ.Class(DBObj,{
-		objectType:"GameSave",
-		constructor:function(param={})
-		{
-			this.mega(param);
-
-			let {
-				date=new Date(),
-				oldSaves=[],
-				state=null
-			}=param;
-
-			if(oldSaves.length>gs.GameSave.OLD_SAVE_COUNT)
-			{
-				oldSaves.length=gs.GameSave.OLD_SAVE_COUNT;
-			}
-
-			this.addField("date",		FIELD.TYPES.DATE	,date );
-			this.addField("state",		FIELD.TYPES.JSON	,state);
-			this.addField("oldSaves",	FIELD.TYPES.JSON	,oldSaves);
-		}
-	});
-	gs.GameSave.OLD_SAVE_COUNT=3;
-
-	SMOD("gs.GameSave",gs.GameSave);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let gs=µ.gs=µ.gs||{};
-
-	//SC=SC({});
-
-	let gameNames=new Map();
-
-	gs.Game=µ.Class({
-		[µ.Class.symbols.abstract]:true,
-		[µ.Class.symbols.onExtend]:function(sub)
-		{
-			let sProt=sub.prototype;
-			if(!sProt.hasOwnProperty("name")||!sProt.name) throw new SyntaxError("#Game:001 Game has no name");
-			if(gameNames.has(sProt.name)) throw new RangeError("#Game:002 Game name must be unique");
-			gameNames.set(sProt.name,sub);
-		},
-		constructor:function({elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
-		{
-			this.state=null;
-			this.system=null; // set from System.setGame()
-			this.domElement=domElement;
-			this.domElement.classList.add("Game");
-			this.domElement.classList.add(this.name);
-
-			this.pause=true;
-		},
-		setPause(value)
-		{
-			this.pause=!!value;
-		},
-		onControllerChange(event){},
-		async save(oldSave=null)
-		{
-			if(this.system!=null)
-			{
-				return this.system.save(oldSave);
-			}
-			throw new ReferenceError("#Game:003 System is null");
-		},
-		async getSaves()
-		{
-			if(this.system!=null)
-			{
-				return this.system.getSaves(this.name);
-			}
-			return [];
-		},
-		destroy()
-		{
-			this.domElement.remove();
-			this.mega();
-		}
-	});
-
-	gs.Game.getGameByName=function(name)
-	{
-		return gameNames.get(name);
-	};
-
-	SMOD("gs.Game",gs.Game);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
 	let Game=GMOD("gs.Game");
 
 	SC=SC({
@@ -1916,113 +2451,6 @@
 	});
 
 	SMOD("gs.Game.SystemSettings",Game.SystemSettings);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let Game=GMOD("gs.Game");
-
-	SC=SC({
-		rs:"rescope"
-	});
-
-	/**
-	 * Game Class to execute an gs.Game.Embedded using an iframe
-	 */
-	Game.Remote=µ.Class(Game,{
-		[µ.Class.symbols.abstract]:function(name,url)
-		{
-			return {name:name,url:new URL(url,location.href)};
-		},
-		[µ.Class.symbols.onExtend]:function(sub)
-		{
-			Game.prototype[µ.Class.symbols.onExtend](sub);
-			let sProt=sub.prototype;
-			if(!sProt.url) throw new SyntaxError("#Game.Remote:001 Game has no url");
-			if(!(sProt.url instanceof URL)) throw new SyntaxError("#Game.Remote:002 Game url is not an instance of URL");
-		},
-		constructor:function()
-		{
-			SC.rs.all(this,["_onLoad","_onMessage","_sendPause"]);
-			this.mega({elementTag:"IFRAME"});
-			this.domElement.classList.add("Remote")
-			this.domElement.sandbox="allow-orientation-lock allow-pointer-lock allow-scripts allow-same-origin";
-			this.domElement.src=this.url;
-			this.domElement.addEventListener("load",this._onLoad,false);
-			window.addEventListener("message",this._onMessage,false);
-		},
-		_onLoad()
-		{
-			this.setPause(this.pause);
-		},
-		_onMessage(event)
-		{
-			if(event.origin===this.url.origin)
-			{
-				let message=event.data;
-				let promise=null;
-				switch(message.type)
-				{
-					case "save":
-						this.state=message.state;
-						promise=this.save(message.oldSave)
-						break;
-					case "getSaves":
-						promise=this.getSaves(message.oldSave);
-						break;
-					case "reclaimFocus":
-						this.reclaimFocus();
-						break;
-				}
-				if(promise)
-				{
-					promise.then(data=>({data:data}),error=>({error:error}))
-					.then(answer=>
-					{
-						answer.request=message.request;
-						this._send(answer);
-					});
-				}
-			}
-		},
-		_send(message)
-		{
-			if(this.domElement.contentWindow)
-			{
-				this.domElement.contentWindow.postMessage(message,this.url.origin);
-			}
-		},
-		setPause(value)
-		{
-			this.mega(value);
-			this._send({
-				type:"pause",
-				value:this.pause
-			});
-		},
-		onControllerChange(event)
-		{
-			this._send({
-				type:"controllerEvent",
-				event:event
-			});
-		},
-		reclaimFocus()
-		{
-			if(this.system!=null)
-			{
-				this.system.domElement.focus();
-			}
-		},
-		destroy()
-		{
-			window.removeEventListener("message",this._onMessage,false);
-			this.mega();
-		}
-	});
-
-	SMOD("gs.Game.Remote",Game.Remote);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -2148,525 +2576,97 @@
 /********************/
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs=µ.gs||{};
-
-	SC=SC({
-		Axis:"gs.Axis"
-	});
-
-	gs.Stick=µ.Class({
-		constructor:function(xAxis=new SC.Axis(),yAxis=new SC.Axis())
-		{
-			this.xAxis=xAxis;
-			this.yAxis=yAxis;
-		},
-		setXAxis(axis)
-		{
-			this.xAxis=axis;
-		},
-		setYAxis(axis)
-		{
-			this.yAxis=axis;
-		},
-		setValue(valueX,valueY)
-		{
-			let rtn=this.xAxis.setValue(valueX);
-			rtn|=this.yAxis.setValue(valueY);
-			return rtn;
-		},
-		getState()
-		{
-			return {
-				x:this.xAxis.getState(),
-				y:this.yAxis.getState()
-			};
-		},
-		toJSON()
-		{
-			return {
-				xAxis:this.xAxis,
-				yAxis:this.yAxis
-			};
-		}
-	});
-
-	gs.Stick.fromJSON=function(json)
-	{
-		return new gs.Stick({
-			xAxis:new SC.Axis(json.xAxis),
-			yAxis:new SC.Axis(json.yAxis)
-		});
-	};
-
-	SMOD("gs.Stick",gs.Stick);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
 	let gs=µ.gs=µ.gs||{};
 
-	let Event=GMOD("Event");
-
-	SC=SC({
-		remove:"array.remove",
-		removeIf:"array.removeIf",
-		Reporter:"EventReporterPatch",
-
-		Button:"gs.Button",
-		Axis:"gs.Axis",
-		Stick:"gs.Stick"
-	});
-
-	let NEXT_CONTROLLER_ID=0;
-
-	gs.Controller=µ.Class({
-		constructor:function({buttons=[],axes=[],sticks=[]}={})
-		{
-			this.ID=NEXT_CONTROLLER_ID++;
-
-			this.buttons=[];
-			this.axes=[];
-			this.sticks=[];
-
-			this.addButtons(buttons);
-			this.addAxes(axes);
-			this.addSticks(sticks);
-
-			new SC.Reporter(this)
-			.introduce(gs.Controller.ChangeEvent);
-
-		},
-		addButtons(buttons)
-		{
-			this.buttons.push(...buttons);
-		},
-		removeButtons(buttons)
-		{
-			SC.removeIf(this.buttons,buttons.includes,true,buttons)
-		},
-		removeButton(button)
-		{
-			SC.remove(this.buttons,button);
-		},
-		addAxes(axes)
-		{
-			this.axes.push(...axes);
-		},
-		removeAxes(axes)
-		{
-			SC.removeIf(this.axes,axes.includes,true,axes)
-		},
-		removeAxe(axe)
-		{
-			SC.remove(this.axes,axe);
-		},
-		addSticks(sticks)
-		{
-			this.sticks.push(...sticks);
-		},
-		removeSticks(sticks)
-		{
-			SC.removeIf(this.sticks,sticks.includes,true,sticks)
-		},
-		removeStick(stick)
-		{
-			SC.remove(this.sticks,stick);
-		},
-		getState()
-		{
-			return {
-				buttons:this.buttons.map(b=>b.getState()),
-				axes:this.axes.map(a=>a.getState()),
-				sticks:this.sticks.map(s=>s.getState()),
-			};
-		},
-		setButton:function(index,value)
-		{
-			if(index<0||index>=this.buttons.length)
-			{
-				µ.logger.error(`#gs.Controller:001 index out of bounds (Button ${index})`);
-				return;
-			}
-			let button=this.buttons[index];
-			if(button.setValue(value))
-			{
-				this.reportEvent(new gs.Controller.ChangeEvent(this,"button",index,button.getState()));
-				return true;
-			}
-		},
-		setAxis:function(index,value)
-		{
-			if(index<0||index>=this.axes.length)
-			{
-				µ.logger.error(`#gs.Controller:002 index out of bounds (Axis ${index})`);
-				return;
-			}
-			let axis=this.axes[index];
-			if(axis.setValue(value))
-			{
-				this.reportEvent(new gs.Controller.ChangeEvent(this,"axis",index,axis.getState()));
-				return true;
-			}
-		},
-		setStick:function(index,valueX,valueY)
-		{
-			if(index<0||index>=this.sticks.length)
-			{
-				µ.logger.error(`#gs.Controller:003 index out of bounds (stick ${index})`);
-				return;
-			}
-			let stick=this.sticks[index];
-			if(stick.setValue(valueX,valueY))
-			{
-				this.reportEvent(new gs.Controller.ChangeEvent(this,"stick",index,stick.getState()));
-				return true;
-			}
-		},
-		toJSON()
-		{
-			return {
-				buttons:this.buttons,
-				axes:this.axes,
-				sticks:this.sticks
-			};
-		}
-	});
-
-	gs.Controller.fromJSON=function(json)
-	{
-		if(json.buttons) json.buttons=buttons.map(SC.Button.fromJSON);
-		if(json.axes) json.axes=json.axes.map(SC.Axis.fromJSON);
-		if(json.sticks) json.sticks=json.sticks.map(SC.Sticks.fromJSON);
-
-		return new gs.Controller(buttons,axes,sticks);
-	};
-
-	SMOD("gs.Controller",gs.Controller);
-
-	gs.Controller.ChangeEvent=µ.Class(Event,
-	{
-		name:"controllerChange",
-		constructor:function(controller,type,index,value)
-		{
-			/** @type {gs.Controller} */
-			this.controllerID=controller.ID
-			/** @type {String} "button", "axis" or "stick" */
-			this.type=type;
-			/** @type {Number} */
-			this.index=index;
-			/** @type {gs.Button|gs.Axes|gs.Stick} */
-			this.value=value;
-		}
-	});
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let gs=µ.gs=µ.gs||{};
-
-	SC=SC({
-		Consumer:"gs.Con.Consumer",
-		Analyzer:"gs.Con.Analyzer"
-	});
-
-	/** @typedef {Object} controllerMapping_task
-	 * @property {String} action
-	 * @property {Any} (data)
-	 */
-	/** @typedef {Object} controllerMapping
-	 * @property {Object.<Number,controllerMapping_task>} (button)
-	 * @property {Object.<Number,controllerMapping_task>} (axis)
-	 * @property {Object.<Number,controllerMapping_task>} (stick)
-	 */
-	/** Base class of all controllable things ( direct use of controller input )*/
-	gs.Component=µ.Class({
-		[µ.Class.symbols.abstract]:true,
-		constructor:function(mapping=null,analyzerOptions)
-		{
-			new SC.Consumer(this,this.actions,mapping);
-			this.analyzer=new SC.Analyzer(analyzerOptions);
-		},
-		/** @type {Object.<String,Function>} */
-		actions:{},
-		//consumeControllerChange(event){} from gs.Con.Consumer
-	});
-
-	SMOD("gs.Component",gs.Component);
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let Component=GMOD("gs.Component");
-
-	SC=SC({});
-
-	Component.Course=µ.Class(Component,{
-		[µ.Class.symbols.abstract]:true,
-		constructor:function({controllerMappings,items=[],elementTag="DIV",domElement=this.domElement||document.createElement(elementTag)}={})
-		{
-			this.mega(controllerMappings);
-
-			this.domElement=domElement;
-			this.domElement.classList.add("Component","Course");
-
-			this.items=new Set();
-
-			this.addItems(items);
-		},
-		addItem(item)
-		{
-			this.items.add(item);
-		},
-		addItems(items)
-		{
-			if(!items) return;
-			for(let item of items) this.addItem(item);
-		},
-		removeItem(item)
-		{
-			this.items.delete(item);
-		},
-		removeItems(items)
-		{
-			if(!items) return;
-			for(let item of items) this.removeItem(item);
-		},
-		destroy()
-		{
-			for(let item of this.items) item.destroy();
-			this.domElement.remove();
-			this.mega();
-		}
-	});
-
-	/**
-	 * Basic 2D Item for Course
-	 */
-	Component.Course.Item=µ.Class({
-		constructor:function({element,x=0,y=0,name=""}={})
-		{
-			/** element that is actually visible (dom/svg/etc)*/
-			this.element=element;
-
-			if(element) Component.Course.Item._references.set(this.element,this);
-
-			this.x=x;
-			this.y=y;
-			this.name=name;
-		},
-		setPosition(x=this.x,y=this.y)
-		{
-			this.x=x;
-			this.y=y;
-		},
-		move(x=0,y=0)
-		{
-			this.setPosition(this.x+x,this.y+y);
-		}
-	});
-	/** keep back references from elements to instances */
-	Component.Course.Item._references=new WeakMap();
-
-	SMOD("gs.Comp.Course",Component.Course);
-
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-	let Course=GMOD("gs.Comp.Course");
-
-	SC=SC({
-		rs:"rescope",
-		proxy:"proxy"
-	});
-
-	Course.Svg=µ.Class(Course,{
-		constructor:function(param={})
-		{
-			if(!param.domElement) param.domElement=Course.Svg.createElement("svg");
-
-			this.mega(param);
-
-			this.defs=Course.Svg.createElement("defs");
-			this.domElement.appendChild(this.defs);
-
-			for(let attr of ["version","baseProfile","width","height","viewBox","preserveAspectRatio"])
-			{
-				Object.defineProperty(this,attr,{
-					configurable:true,
-					enumerable:true,
-					get:()=>this.domElement.getAttribute(attr),
-					set:value=>this.domElement.setAttribute(attr,value)
-				});
-			};
-
-			this.version=Course.Svg.VERSION;
-			this.baseProfile=Course.Svg.BASE_PROFILE;
-
-			({
-				width:this.width=null,
-				height:this.height=null,
-				preserveAspectRatio:this.preserveAspectRatio="none",
-
-				viewTop:param.viewTop=0,
-				viewLeft:param.viewLeft=0,
-				viewWidth:param.viewWidth=this.width==null?this.width:100,
-				viewHeight:param.viewHeight=this.height==null?this.height:100,
-				viewBox:this.viewBox=param.viewTop+" "+param.viewLeft+" "+param.viewWidth+" "+param.viewHeight
-			}=param);
-
-		},
-		addDef(element)
-		{
-			this.defs.appendChild(element);
-		},
-		addItem(item)
-		{
-			this.mega(item);
-			this.domElement.appendChild(item.element);
-		},
-		removeItem(item)
-		{
-			this.mega(item);
-			this.domElement.removeChild(item.element);
-		},
-	});
-	Course.Svg.VERSION=1.2;
-	Course.Svg.BASE_PROFILE="full";
-	Course.Svg.XMLNS="http://www.w3.org/2000/svg";
-	Course.Svg.createElement=function(tagName,attributes={})
-	{
-		let element=document.createElementNS(Course.Svg.XMLNS,tagName);
-
-		for(let [attr,value] of Object.entries(attributes))
-		{
-			element.setAttribute(attr,value);
-		}
-		return element;
-	};
-
-	Course.Svg.Item=µ.Class(Course.Item,{
-		constructor:function(param={})
-		{
-			if(!param.element) param.element=Course.Svg.createElement(param.tagName||"g",param.attributes)
-			this.mega(param);
-
-			this.autoUpdate=false;
-
-			this.setPosition();
-
-			this.autoUpdate=param.autoUpdate!==false;
-		},
-		setPosition(x,y)
-		{
-			this.mega(x,y);
-			if(this.autoUpdate) this.update();
-		},
-		update()
-		{
-			this.element.setAttribute("transform",`translate(${this.x} ${this.y})`);
-		},
-		destroy()
-		{
-			this.element.remove();
-			this.mega();
-		}
-	});
-
-	SMOD("gs.Comp.Course.Svg",Course.Svg);
-
-
-})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
-/********************/
-(function(µ,SMOD,GMOD,HMOD,SC){
-
-    let gs=µ.gs=µ.gs||{};
+	let DBObj=GMOD("DBObj");
 
 	//SC=SC({});
 
-	gs.Axis=µ.Class({
-		constructor:function({value=0,correction=0,scale=1,min=-100,max=100}={})
+	gs.GameSave=µ.Class(DBObj,{
+		objectType:"GameSave",
+		constructor:function(param={})
 		{
-			this.value=0;
-			this.oldValue=0;
-			this.correction=0;
-			this.scale=1;
-			this.min=min;
-			this.max=max;
+			this.mega(param);
 
-			this.setValue(value);
-			this.setCorrection(correction);
-			this.setScale(scale);
-		},
-		setCorrection(correction=0)
-		{
-			this.correction=Math.min(Math.max(correction,-100),100);
-		},
-		setScale(scale=1)
-		{
-			this.scale=Math.max(scale,Number.EPSILON);
-		},
-        setValue(value)
-        {
-        	this.oldValue=this.value;
-        	if(value==null) return false;
-        	value=Math.min(Math.max(value*this.scale+this.correction,this.min),this.max);
-        	if(this.value==value) return false;
-			this.value=value;
-			return true;
-        },
-		getState()
-		{
-			return {
-				value:this.value,
-				old:this.oldValue
-			};
-		},
-		toJSON()
-		{
-			return {
-				correction:this.correction,
-				scale:this.scale
-			};
+			let {
+				date=new Date(),
+				oldSaves=[],
+				state=null
+			}=param;
+
+			if(oldSaves.length>gs.GameSave.OLD_SAVE_COUNT)
+			{
+				oldSaves.length=gs.GameSave.OLD_SAVE_COUNT;
+			}
+
+			this.addField("date",		FIELD.TYPES.DATE	,date );
+			this.addField("state",		FIELD.TYPES.JSON	,state);
+			this.addField("oldSaves",	FIELD.TYPES.JSON	,oldSaves);
 		}
 	});
+	gs.GameSave.OLD_SAVE_COUNT=3;
 
-	gs.Axis.fromJSON=function(json)
-	{
-		return new gs.Axis(json);
-	};
-
-	SMOD("gs.Axis",gs.Axis);
+	SMOD("gs.GameSave",gs.GameSave);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
 (function(µ,SMOD,GMOD,HMOD,SC){
 
-    let gs=µ.gs=µ.gs||{};
+	let MemoryCard=GMOD("gs.MemoryCard");
 
-    let Axis=GMOD("gs.Axis");
+	SC=SC({
+		ObjectConnector:"ObjectConnector",
+		GameSave:"gs.GameSave"
+	});
 
-	//SC=SC({});
-
-	gs.Button=µ.Class(Axis,{
-		constructor:function(param={})
+	MemoryCard.Connector=µ.Class(MemoryCard,{
+		[µ.Class.symbols.abstract]:true,
+		[µ.Class.symbols.onExtend]:function(sub)
 		{
-			param.min=0;
-			param.max=100;
-			this.mega(param);
+			if(typeof sub.prototype.getConnector!="function") throw new SyntaxError("#MemoryCard.Connector:001 no getConnector function defined");
+		},
+		//getConnector(name){},
+		save(gameName,gameSave)
+		{
+			let connector=this.getConnector(gameName);
+			return connector.save(gameSave);
+		},
+		getAll(gameName)
+		{
+			let connector=this.getConnector(gameName);
+			return connector.load(SC.GameSave);
 		}
 	});
 
-	gs.Button.fromJSON=function(json)
-	{
-		return new gs.Button(json);
-	};
+	SMOD("gs.MemCon",MemoryCard.Connector);
 
-	SMOD("gs.Button",gs.Button);
+})(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
+/********************/
+(function(µ,SMOD,GMOD,HMOD,SC){
+
+	let MemCon=GMOD("gs.MemCon");
+
+	SC=SC({
+		ObjectConnector:"ObjectConnector"
+	});
+
+	MemCon.Object=µ.Class(MemCon,{
+		constructor:function(global=false)
+		{
+			this.connectors=new Map();
+			this.global=global;
+		},
+		getConnector(name)
+		{
+			if(!this.connectors.has(name))
+			{
+				this.connectors.set(name,new SC.ObjectConnector(this.global));
+			}
+			return this.connectors.get(name);
+		}
+	});
+
+	SMOD("gs.MemCon.Object",MemCon.Object);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 //# sourceMappingURL=MorgasGS-0.8.8.js.map
