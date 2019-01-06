@@ -50,7 +50,7 @@
 				{
 					this.game.setPause(this.pause);
 				}
-				this.updatePoll(this.pause?null:false);
+				this.updatePoll();
 			},50);
 		},
 		keyListener(event)
@@ -74,23 +74,24 @@
 		},
 		updatePoll(force)
 		{
-			let check=force===true?true:force===false?false:this.shouldPoll();
+			let check=force==null?this.shouldPoll():force;
+
+			//clearInterval(this.poll);
+			cancelAnimationFrame(this.poll);
+
 			if (check)
 			{
-				clearInterval(this.poll);
-				this.poll=setInterval(this.doPoll,1000);
-				//this.doPoll();
+				//this.poll=setInterval(this.doPoll,1000);
+				this.doPoll();
 			}
 			else
 			{
-				clearInterval(this.poll);
-				//cancelAnimationFrame(this.poll);
 				this.poll=null;
 			}
 		},
 		shouldPoll()
 		{
-			if(this.poll!==null) return false;
+			if(this.pause) return false;
 
 			if(HMOD("gs.Con.Gamepad"))
 			{
@@ -108,7 +109,7 @@
 			//TODO hold list of gamepads?
 			if(HMOD("gs.Con.Gamepad"))
 			{
-				//this.poll=requestAnimationFrame(this.doPoll);
+				this.poll=requestAnimationFrame(this.doPoll);
 				let Gamepad=GMOD("gs.Con.Gamepad");
 				for(let controller of this.controllers)
 				{

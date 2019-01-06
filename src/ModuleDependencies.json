@@ -61,21 +61,6 @@
 			"rescope"
 		]
 	},
-	"gs.Comp.ControllerConfig": {
-		"deps": [
-			"gs.Panel"
-		],
-		"uses": [
-			"gs.Comp.List",
-			"array.repeat",
-			"gs.Con.Keyboard",
-			"gs.Con.Gamepad",
-			"gs.Button",
-			"gs.Axis",
-			"gs.Stick",
-			"gs.Comp.ControllerStatus"
-		]
-	},
 	"gs.Comp.ControllerStatus": {
 		"deps": [
 			"gs.Component"
@@ -165,7 +150,7 @@
 			"gs.Game"
 		],
 		"uses": [
-			"gs.Comp.ControllerConfig",
+			"gs.Panel.ControllerConfig",
 			"gs.Comp.List",
 			"proxy"
 		]
@@ -177,6 +162,21 @@
 		"uses": [
 			"ObjectConnector",
 			"gs.GameSave"
+		]
+	},
+	"gs.Panel.ControllerConfig": {
+		"deps": [
+			"gs.Panel"
+		],
+		"uses": [
+			"gs.Comp.List",
+			"array.repeat",
+			"gs.Con.Keyboard",
+			"gs.Con.Gamepad",
+			"gs.Button",
+			"gs.Axis",
+			"gs.Stick",
+			"gs.Comp.ControllerStatus"
 		]
 	},
 	"gs.MemCon.Object": {

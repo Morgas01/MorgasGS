@@ -17,7 +17,7 @@
 	});
 
 	/** this Component lists and configures all Controller on the System */
-	Component.ControllerConfig=µ.Class(Panel,{
+	Panel.ControllerConfig=µ.Class(Panel,{
 		constructor:function(system,{
 			onExit=null,
 			buttons=6,
@@ -37,7 +37,7 @@
 			this.axisCount=axes;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("Component","ControllerConfig");
+			this.domElement.classList.add("Panel","ControllerConfig");
 
 			this.main=document.createElement("DIV");
 			this.main.classList.add("main");
@@ -77,6 +77,10 @@
     		this.controllers=[];
 			this.controllerList=new SC.List(this.controllers,controllerListMapper);
     		this.controllerList.domElement.classList.add("controllerList");
+    		this.controllerList.addEventListener("gs.Select",this,function(event)
+    		{
+    			this.controllerList.setActive(event.index);
+    		});
     		this.main.appendChild(this.controllerList.domElement);
 
     		this.updateSystem();
@@ -102,7 +106,7 @@
 					this.selectGamepad()
 					.then(newGameCon=>{
 						this.system.addController(newGameCon);
-						this.updateSystem;
+						this.updateSystem();
 					});
 					break;
 				case "edit":
@@ -460,6 +464,6 @@
 		element.title=data.action
 	};
 
-	SMOD("gs.Comp.ControllerConfig",Component.ControllerConfig);
+	SMOD("gs.Panel.ControllerConfig",Panel.ControllerConfig);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);

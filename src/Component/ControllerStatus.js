@@ -39,29 +39,48 @@
 		getButton(index)
 		{
 			let element=this.inputElements["button"][index];
-			if(element.children.length<=1)
+			if(!element.classList.contains("button"))
 			{// empty
+				element.classList.add("button")
 				let meter=document.createElement("METER");
 				meter.min=0;
 				meter.max=meter.optimum=100;
 				meter.low=30;
 				meter.high=80;
-				meter.name="meter";
+				meter.classList.add("buttonMeter");
 				element.appendChild(meter);
 
 				let valueText=document.createElement("SPAN")
-				valueText.name="valueText";
+				valueText.classList.add("buttonValueText");
 				element.appendChild(valueText);
+
+				meter.value=valueText.textContent=0;
 			}
 			return element;
 		},
 		getAxis(index)
 		{
 			let element=this.inputElements["axis"][index];
+			return element;
 		},
 		getStick(index)
 		{
 			let element=this.inputElements["stick"][index];
+			if(!element.classList.contains("stick"))
+			{// empty
+				element.classList.add("stick")
+				let area=document.createElement("DIV");
+				area.classList.add("stickArea");
+				element.appendChild(area);
+
+				let pointer=document.createElement("DIV");
+				pointer.classList.add("stickPointer");
+				area.appendChild(pointer);
+
+				pointer.style.top="101em";
+				pointer.style.left="101em";
+			}
+			return element;
 		},
 		actions:{
 			show:function(event)
@@ -71,6 +90,10 @@
 					case "button":
 					{
 						let element=this.getButton(event.index);
+						let meter=element.querySelector(".buttonMeter");
+						let valueText=element.querySelector(".buttonValueText");
+
+						meter.value=valueText.textContent=event.value.value;
 						break;
 					}
 					case "axis":
@@ -79,6 +102,11 @@
 					}
 					case "stick":
 					{
+						let element=this.getStick(event.index);
+						let pointer=element.querySelector(".stickPointer");
+
+						pointer.style.top=(101-event.value.y.value)+"em";
+						pointer.style.left=(101-event.value.x.value)+"em";
 						break;
 					}
 				}

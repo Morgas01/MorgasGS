@@ -63,13 +63,13 @@
 	tests.loadTest("Button");
 	tests.loadTest("Stick");
 
-	tests.loadMorgas("Morgas.Patch");
-	tests.loadMorgas("Morgas.Event");
-	tests.loadMorgas("Morgas.util.array.remove");
-	tests.loadMorgas("Morgas.util.function.rescope");
+	tests.loadMorgas("Patch");
+	tests.loadMorgas("Event");
+	tests.loadMorgas("util/array/remove");
+	tests.loadMorgas("util/function/rescope");
 
 	tests.loadTest("Controller");
-	tests.loadTest("Controller.Keyboard");
+	tests.loadTest("Controller/Keyboard");
 
 	document.write(String.raw`<script type="application/javascript" charset="utf-8" src="tests/checkGlobals.js" defer></script>`);
 

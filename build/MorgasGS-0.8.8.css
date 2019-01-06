@@ -52,6 +52,26 @@
   grid-template-rows: [button] auto [axis] auto [stick] auto;
   background-color: white;
 }
+.ControllerStatus fieldset.button {
+  display: flex;
+}
+.ControllerStatus fieldset.button .buttonValueText {
+  min-width: 2.5em;
+}
+.ControllerStatus fieldset.stick .stickArea {
+  font-size: .5px;
+  width: 201em;
+  height: 201em;
+  position: relative;
+  border: 1px solid grey;
+}
+.ControllerStatus fieldset.stick .stickPointer {
+  width: 5em;
+  height: 5em;
+  background-color: red;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
 .Component.List {
   display: grid;
   grid-template-columns: repeat(var(--list-columns, 1), 1fr);

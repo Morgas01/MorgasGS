@@ -103,7 +103,7 @@
 				this.gamepad=gamepad;
 				this.timestamp=gamepad.timestamp;
 
-				for(let i=0;i<=gamepad.buttons.length;i++)
+				for(let i=0;i<gamepad.buttons.length;i++)
 				{
 					let buttonIndex=this.mappings.buttons[i];
 					if(buttonIndex!=null) this.setButton(buttonIndex,gamepad.buttons[i].value*100);
@@ -118,7 +118,7 @@
 						let valueY=null;
 						if(stickMapping.direction==="x") valueX=gamepad.axes[i]*100;
 						else valueY=gamepad.axes[i]*100;
-						return this.setStick(stickMapping.index,valueX,valueY);
+						this.setStick(stickMapping.index,valueX,valueY);
 					}
 					else
 					{

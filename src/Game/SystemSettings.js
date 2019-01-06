@@ -3,7 +3,7 @@
 	let Game=GMOD("gs.Game");
 
 	SC=SC({
-		ControllerConfig:"gs.Comp.ControllerConfig",
+		ControllerConfig:"gs.Panel.ControllerConfig",
 		List:"gs.Comp.List",
 		proxy:"proxy"
 	});
@@ -20,7 +20,7 @@
 			this.content=this.list=new SC.List(["Controller Config","Exit"]);
 			this.list.addEventListener("gs.Select",this,this.onSelect);
 
-			SC.proxy("content",["onControllerChange"],this)
+			SC.proxy("content",[["consumeControllerChange","onControllerChange"]],this)
 
 			this.domElement.appendChild(this.content.domElement);
 		},

@@ -9,7 +9,6 @@
 	"gs.Panel": "Panel.js",
 	"gs.Stick": "Stick.js",
 	"gs.System": "System.js",
-	"gs.Comp.ControllerConfig": "Component/ControllerConfig.js",
 	"gs.Comp.ControllerStatus": "Component/ControllerStatus.js",
 	"gs.Comp.Course": "Component/Course.js",
 	"gs.Comp.Course.Svg": "Component/Course.Svg.js",
@@ -22,5 +21,6 @@
 	"gs.Game.Remote": "Game/Remote.js",
 	"gs.Game.SystemSettings": "Game/SystemSettings.js",
 	"gs.MemCon": "MemoryCard/Connector.js",
+	"gs.Panel.ControllerConfig": "Panel/ControllerConfig.js",
 	"gs.MemCon.Object": "MemoryCard/Connector/Object.js"
 }

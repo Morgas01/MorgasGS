@@ -328,7 +328,7 @@
 				{
 					this.game.setPause(this.pause);
 				}
-				this.updatePoll(this.pause?null:false);
+				this.updatePoll();
 			},50);
 		},
 		keyListener(event)
@@ -352,23 +352,24 @@
 		},
 		updatePoll(force)
 		{
-			let check=force===true?true:force===false?false:this.shouldPoll();
+			let check=force==null?this.shouldPoll():force;
+
+			//clearInterval(this.poll);
+			cancelAnimationFrame(this.poll);
+
 			if (check)
 			{
-				clearInterval(this.poll);
-				this.poll=setInterval(this.doPoll,1000);
-				//this.doPoll();
+				//this.poll=setInterval(this.doPoll,1000);
+				this.doPoll();
 			}
 			else
 			{
-				clearInterval(this.poll);
-				//cancelAnimationFrame(this.poll);
 				this.poll=null;
 			}
 		},
 		shouldPoll()
 		{
-			if(this.poll!==null) return false;
+			if(this.pause) return false;
 
 			if(HMOD("gs.Con.Gamepad"))
 			{
@@ -386,7 +387,7 @@
 			//TODO hold list of gamepads?
 			if(HMOD("gs.Con.Gamepad"))
 			{
-				//this.poll=requestAnimationFrame(this.doPoll);
+				this.poll=requestAnimationFrame(this.doPoll);
 				let Gamepad=GMOD("gs.Con.Gamepad");
 				for(let controller of this.controllers)
 				{
@@ -1113,29 +1114,48 @@
 		getButton(index)
 		{
 			let element=this.inputElements["button"][index];
-			if(element.children.length<=1)
+			if(!element.classList.contains("button"))
 			{// empty
+				element.classList.add("button")
 				let meter=document.createElement("METER");
 				meter.min=0;
 				meter.max=meter.optimum=100;
 				meter.low=30;
 				meter.high=80;
-				meter.name="meter";
+				meter.classList.add("buttonMeter");
 				element.appendChild(meter);
 
 				let valueText=document.createElement("SPAN")
-				valueText.name="valueText";
+				valueText.classList.add("buttonValueText");
 				element.appendChild(valueText);
+
+				meter.value=valueText.textContent=0;
 			}
 			return element;
 		},
 		getAxis(index)
 		{
 			let element=this.inputElements["axis"][index];
+			return element;
 		},
 		getStick(index)
 		{
 			let element=this.inputElements["stick"][index];
+			if(!element.classList.contains("stick"))
+			{// empty
+				element.classList.add("stick")
+				let area=document.createElement("DIV");
+				area.classList.add("stickArea");
+				element.appendChild(area);
+
+				let pointer=document.createElement("DIV");
+				pointer.classList.add("stickPointer");
+				area.appendChild(pointer);
+
+				pointer.style.top="101em";
+				pointer.style.left="101em";
+			}
+			return element;
 		},
 		actions:{
 			show:function(event)
@@ -1145,6 +1165,10 @@
 					case "button":
 					{
 						let element=this.getButton(event.index);
+						let meter=element.querySelector(".buttonMeter");
+						let valueText=element.querySelector(".buttonValueText");
+
+						meter.value=valueText.textContent=event.value.value;
 						break;
 					}
 					case "axis":
@@ -1153,6 +1177,11 @@
 					}
 					case "stick":
 					{
+						let element=this.getStick(event.index);
+						let pointer=element.querySelector(".stickPointer");
+
+						pointer.style.top=(101-event.value.y.value)+"em";
+						pointer.style.left=(101-event.value.x.value)+"em";
 						break;
 					}
 				}
@@ -1469,44 +1498,37 @@
 		},
 		moveRight()
 		{
-			this.domElement.children[this.active].classList.remove("active");
-
-			this.active=(this.active+1)%this.data.length;
-
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive((this.active+1)%this.data.length);
 		},
 		moveLeft()
 		{
-			this.domElement.children[this.active].classList.remove("active");
+			let nextActive=this.active;
+			if(nextActive<=0)nextActive=this.data.length;
+			nextActive--;
 
-			if(this.active<=0)this.active=this.data.length;
-			this.active--;
-
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive(nextActive);
 		},
 		moveDown()
 		{
-			this.domElement.children[this.active].classList.remove("active");
+			let nextActive=this.active;
+			if(nextActive+this.columns>=this.data.length) nextActive=nextActive%this.columns;
+			else nextActive+=this.columns;
 
-			if(this.active+this.columns>=this.data.length) this.active=this.active%this.columns;
-			else this.active+=this.columns;
-
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive(nextActive);
 		},
 		moveUp()
 		{
-			this.domElement.children[this.active].classList.remove("active");
-
-			if(this.active-this.columns<0)
+			let nextActive=this.active;
+			if(nextActive-this.columns<0)
 			{
 				let fullList=this.columns*Math.ceil(this.data.length/this.columns);
-				this.active=fullList-(this.columns-this.active);
-				if(this.active>=this.data.length) this.active-=this.columns;
+				nextActive=fullList-(this.columns-nextActive);
+				if(nextActive>=this.data.length) nextActive-=this.columns;
 
 			}
-			else this.active-=this.columns;
+			else nextActive-=this.columns;
 
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive(nextActive);
 		},
 		_step()
 		{
@@ -1533,6 +1555,14 @@
 		getActiveData()
 		{
 			return this.data[this.active];
+		},
+		setActive(index)
+		{
+			if(index<0&&index>this.data.length-1) return false;
+			this.domElement.children[this.active].classList.remove("active");
+			this.active=index;
+			this.domElement.children[this.active].classList.add("active");
+			return true;
 		}
 	});
 
@@ -1672,7 +1702,7 @@
 				this.gamepad=gamepad;
 				this.timestamp=gamepad.timestamp;
 
-				for(let i=0;i<=gamepad.buttons.length;i++)
+				for(let i=0;i<gamepad.buttons.length;i++)
 				{
 					let buttonIndex=this.mappings.buttons[i];
 					if(buttonIndex!=null) this.setButton(buttonIndex,gamepad.buttons[i].value*100);
@@ -1687,7 +1717,7 @@
 						let valueY=null;
 						if(stickMapping.direction==="x") valueX=gamepad.axes[i]*100;
 						else valueY=gamepad.axes[i]*100;
-						return this.setStick(stickMapping.index,valueX,valueY);
+						this.setStick(stickMapping.index,valueX,valueY);
 					}
 					else
 					{
@@ -1943,7 +1973,7 @@
 	});
 
 	/** this Component lists and configures all Controller on the System */
-	Component.ControllerConfig=µ.Class(Panel,{
+	Panel.ControllerConfig=µ.Class(Panel,{
 		constructor:function(system,{
 			onExit=null,
 			buttons=6,
@@ -1963,7 +1993,7 @@
 			this.axisCount=axes;
 
 			this.domElement=document.createElement("DIV");
-			this.domElement.classList.add("Component","ControllerConfig");
+			this.domElement.classList.add("Panel","ControllerConfig");
 
 			this.main=document.createElement("DIV");
 			this.main.classList.add("main");
@@ -2003,6 +2033,10 @@
     		this.controllers=[];
 			this.controllerList=new SC.List(this.controllers,controllerListMapper);
     		this.controllerList.domElement.classList.add("controllerList");
+    		this.controllerList.addEventListener("gs.Select",this,function(event)
+    		{
+    			this.controllerList.setActive(event.index);
+    		});
     		this.main.appendChild(this.controllerList.domElement);
 
     		this.updateSystem();
@@ -2028,7 +2062,7 @@
 					this.selectGamepad()
 					.then(newGameCon=>{
 						this.system.addController(newGameCon);
-						this.updateSystem;
+						this.updateSystem();
 					});
 					break;
 				case "edit":
@@ -2386,7 +2420,7 @@
 		element.title=data.action
 	};
 
-	SMOD("gs.Comp.ControllerConfig",Component.ControllerConfig);
+	SMOD("gs.Panel.ControllerConfig",Panel.ControllerConfig);
 
 })(Morgas,Morgas.setModule,Morgas.getModule,Morgas.hasModule,Morgas.shortcut);
 /********************/
@@ -2395,7 +2429,7 @@
 	let Game=GMOD("gs.Game");
 
 	SC=SC({
-		ControllerConfig:"gs.Comp.ControllerConfig",
+		ControllerConfig:"gs.Panel.ControllerConfig",
 		List:"gs.Comp.List",
 		proxy:"proxy"
 	});
@@ -2412,7 +2446,7 @@
 			this.content=this.list=new SC.List(["Controller Config","Exit"]);
 			this.list.addEventListener("gs.Select",this,this.onSelect);
 
-			SC.proxy("content",["onControllerChange"],this)
+			SC.proxy("content",[["consumeControllerChange","onControllerChange"]],this)
 
 			this.domElement.appendChild(this.content.domElement);
 		},

@@ -108,44 +108,37 @@
 		},
 		moveRight()
 		{
-			this.domElement.children[this.active].classList.remove("active");
-
-			this.active=(this.active+1)%this.data.length;
-
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive((this.active+1)%this.data.length);
 		},
 		moveLeft()
 		{
-			this.domElement.children[this.active].classList.remove("active");
+			let nextActive=this.active;
+			if(nextActive<=0)nextActive=this.data.length;
+			nextActive--;
 
-			if(this.active<=0)this.active=this.data.length;
-			this.active--;
-
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive(nextActive);
 		},
 		moveDown()
 		{
-			this.domElement.children[this.active].classList.remove("active");
+			let nextActive=this.active;
+			if(nextActive+this.columns>=this.data.length) nextActive=nextActive%this.columns;
+			else nextActive+=this.columns;
 
-			if(this.active+this.columns>=this.data.length) this.active=this.active%this.columns;
-			else this.active+=this.columns;
-
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive(nextActive);
 		},
 		moveUp()
 		{
-			this.domElement.children[this.active].classList.remove("active");
-
-			if(this.active-this.columns<0)
+			let nextActive=this.active;
+			if(nextActive-this.columns<0)
 			{
 				let fullList=this.columns*Math.ceil(this.data.length/this.columns);
-				this.active=fullList-(this.columns-this.active);
-				if(this.active>=this.data.length) this.active-=this.columns;
+				nextActive=fullList-(this.columns-nextActive);
+				if(nextActive>=this.data.length) nextActive-=this.columns;
 
 			}
-			else this.active-=this.columns;
+			else nextActive-=this.columns;
 
-			this.domElement.children[this.active].classList.add("active");
+			this.setActive(nextActive);
 		},
 		_step()
 		{
@@ -172,6 +165,14 @@
 		getActiveData()
 		{
 			return this.data[this.active];
+		},
+		setActive(index)
+		{
+			if(index<0&&index>this.data.length-1) return false;
+			this.domElement.children[this.active].classList.remove("active");
+			this.active=index;
+			this.domElement.children[this.active].classList.add("active");
+			return true;
 		}
 	});
 
