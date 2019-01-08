@@ -16,9 +16,8 @@
 		"build": "node lib/build"
 	},
 	"devDependencies": {
-		"concat-with-sourcemaps": "^1.0.5",
-		"less": "^2.7.3",
-		"magic-string": "^0.22.4",
+		"concat-with-sourcemaps": "^1.1.0",
+		"less": "^3.9.0",
 		"morgas": "^0.8.8"
 	}
 }
