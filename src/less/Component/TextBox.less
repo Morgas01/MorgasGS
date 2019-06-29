@@ -1,0 +1,17 @@
+.Component.List {
+	white-space:pre-wrap;
+	border-style:solid;
+
+	.active(@css:{})
+	{
+		:last-child {
+			@css();
+		}
+	}
+	.activeType(@type,@css:{})
+	{
+		.TextBox-Part-@{type}:last-child {
+			@css();
+		}
+	}
+}

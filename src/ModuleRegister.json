@@ -13,6 +13,7 @@
 	"gs.Comp.Course": "Component/Course.js",
 	"gs.Comp.Course.Svg": "Component/Course.Svg.js",
 	"gs.Comp.List": "Component/List.js",
+	"gs.Comp.TextBox": "Component/TextBox.js",
 	"gs.Con.Analyzer": "Controller/Analyzer.js",
 	"gs.Con.Consumer": "Controller/Consumer.js",
 	"gs.Con.Gamepad": "Controller/Gamepad.js",

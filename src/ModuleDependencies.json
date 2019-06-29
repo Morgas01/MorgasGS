@@ -95,6 +95,16 @@
 			"EventReporterPatch"
 		]
 	},
+	"gs.Comp.TextBox": {
+		"deps": [
+			"gs.Component",
+			"Event"
+		],
+		"uses": [
+			"rescope",
+			"EventReporterPatch"
+		]
+	},
 	"gs.Con.Analyzer": {
 		"deps": [
 			"gs.Controller"

@@ -69,7 +69,12 @@
 	tests.loadMorgas("util/function/rescope");
 
 	tests.loadTest("Controller");
+	tests.loadTest("Controller/Consumer");
+	tests.loadTest("Controller/Analyzer");
 	tests.loadTest("Controller/Keyboard");
+
+	tests.loadTest("Component");
+	tests.loadTest("Component/TextBox");
 
 	document.write(String.raw`<script type="application/javascript" charset="utf-8" src="tests/checkGlobals.js" defer></script>`);
 
